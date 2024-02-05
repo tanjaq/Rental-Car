@@ -27,7 +27,7 @@ To solve the task, proceed as follows:
 - High season is from April until end of October.
 - If renting in High season, price is increased by 15%.
 
-- If renting for more than 10 days, price is decresed by 10% (except during the high season).
+- If renting for more than 10 days, price is decresed by 10% (expect during the high season).
 
 - The minimum rental price per day is equivalent to the age of the driver.
 
