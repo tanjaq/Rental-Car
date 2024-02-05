@@ -1,6 +1,7 @@
 <!-- form.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,11 +14,13 @@
             margin: 0;
             padding: 0;
         }
+
         div.formContainer {
             padding: 20px 20px;
             max-width: 600px;
             margin: 0 auto;
         }
+
         input[type="text"],
         input[type="number"],
         select {
@@ -28,6 +31,7 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
+
         input[type="submit"] {
             background-color: #4CAF50;
             color: white;
@@ -38,9 +42,11 @@
             cursor: pointer;
             width: 100%;
         }
+
         input[type="submit"]:hover {
             background-color: #45a049;
         }
+
         .car-list {
             list-style-type: none;
             padding: 0;
@@ -49,6 +55,7 @@
             flex-wrap: wrap;
             justify-content: space-between;
         }
+
         .car-item {
             width: 45%;
             background-color: #fff;
@@ -57,35 +64,39 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         .car-item img {
             max-width: 100%;
             height: auto;
             margin-bottom: 10px;
         }
+
         .car-name {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         .car-price {
             font-size: 16px;
             color: #007bff;
         }
     </style>
 </head>
+
 <body>
     <div class="formContainer">
         <h1>Car Rental Booking Form</h1>
         <form id="calcForm" method="post" action="http://localhost:3000">
             <label for="pickup-location">Pickup Location:</label>
             <input type="text" id="pickup-location" name="pickup" required>
-    
+
             <label for="dropoff-location">Dropoff Location:</label>
             <input type="text" id="dropoff-location" name="dropoff" required>
 
             <label for="pickup-date">Pickup Date:</label>
             <input type="date" id="pickup-date" name="pickupdate" required>
-    
+
             <label for="dropoff-date">Dropoff Date:</label>
             <input type="date" id="dropoff-date" name="dropoffdate" required>
 
@@ -99,11 +110,17 @@
 
             <div class="form-group">
                 <label for="age">Diver's age</label>
-                <input type="number" class="form-control" name="age" required/>
+                <input type="number" class="form-control" name="age" required />
+            </div>
+
+            <div>
+                <label for="license-creation-date">License creation date:</label>
+                <input type="date" id="license-creation-date" name="licenseCreationDate" required>
             </div>
 
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
     </div>
 </body>
+
 </html>
