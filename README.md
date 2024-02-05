@@ -7,7 +7,7 @@ The client's request is to improve the program code to meet clean code standards
 To solve the task, proceed as follows:
 1. Fork this repository on to your account
 2. Clone the forked repo to your computer using `git clone URL`
-3. Run `npm install express body-parser fs` to install all dependencies
+3. Run `npm install` to install all dependencies
 4. To run the project call `node index.js` start the app
 5. Application will be available at http://localhost:3000/
 6. Make all necessary changes and commit
@@ -27,7 +27,7 @@ To solve the task, proceed as follows:
 - High season is from April until end of October.
 - If renting in High season, price is increased by 15%.
 
-- If renting for more than 10 days, price is decresed by 10% (expect during the high season).
+- If renting for more than 10 days, price is decresed by 10% (except during the high season).
 
 - The minimum rental price per day is equivalent to the age of the driver.
 
