@@ -62,7 +62,7 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, license) {
         rentalprice *= 1.3;
     }
 
-    if (license < 3) {
+    if (license < 3 && season === "High") {
         rentalprice = (age + 15) * days;
     }
 
