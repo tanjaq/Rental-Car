@@ -1,76 +1,112 @@
+function calculateTotalPriceAndCheckIfValid(pickupDate, dropOffDate, carType, driverAge, ageOfLicense) {
 
-function Price(PickUp, DropOff, PickupDate, DropOffDate, type, age, AgeOfLicense) {
-    const carType = getCarType(type);
-    const Days = getDays(PickupDate, DropOffDate);
-    const Season = highSeason(PickupDate, DropOffDate);
-    const D = new Date();
-    let CurrentYear = D.getFullYear();
+    const rentalDays = getrentalDays(pickupDate, dropOffDate);
+    const Season = highSeason(pickupDate, dropOffDate);
+    const currentYear = new Date().getFullYear();
 
+    if (driverIsTooYoung(driverAge)) {
 
-
-    if (age < 18) {
         return "Driver too young - cannot quote the price";
     }
 
-    if ((CurrentYear - AgeOfLicense) < 1) {
-        return "Individuals holding a driver's license for less than a year are ineligible to rent."
-    }
+    if (restrictedDriver(driverAge, carType)) {
 
-    if (age <= 21 && CarType !== "Compact") {
         return "Drivers 21 y/o or less can only rent Compact vehicles";
+
     }
-    let RentalPrice = age * Days;
-    if (carType === "Racer" && Age <= 25 && Season == true) {
-        RentalPrice *= 1.5;
+    if ((currentYear - ageOfLicense) < 1) {
+        return "Individuals holding a drivers license for less than a year are ineligible to rent."
     }
 
-    if (Season == true) {
-        RentalPrice *= 1.15;
-    }
+    const basePrice = calculateBasePrice(driverAge, rentalDays);
+    const rentalPrice = calculateExtraCharge(basePrice, carType, currentYear, ageOfLicense, rentalDays, Season, driverAge);
 
-    if (Days > 10 && Season === "Low") {
-        RentalPrice *= 0.9;
-    }
-    if ((CurrentYear - AgeOfLicense) < 2) {
-        RentalPrice *= 1.3;
-    }
-
-    if ((CurrentYear - AgeOfLicense) < 3 && Season == true) {
-        RentalPrice = + 15 * Days;
-    }
-    return '$' + RentalPrice;
+    return (rentalPrice + '$');
 
 }
 
-function getCarType(type) {
-    var carType = {
-        'Compact': 'Compact',
-        'Electric': 'Electric',
-        'Cabrio': 'Cabrio',
-        'Racer': 'Racer'
-    };
+function calculateBasePrice(driverAge, rentalDays) {
+
+    return driverAge * rentalDays;
+
 }
 
-function getDays(PickupDate, DropOffDate) {
+function calculateExtraCharge(basePrice, carType, currentYear, ageOfLicense, rentalDays, Season, driverAge) {
 
-    const pickupDate = new Date(PickupDate);
-    const dropoffDate = new Date(DropOffDate);
-    const differenceTime = Math.abs(dropoffDate - pickupDate);
+
+    let rentalPrice = basePrice;
+
+    if (driverAge <= 25 && carType === "Racer" && Season) {
+
+        return rentalPrice = basePrice * 1.5;
+
+    }
+
+    if (Season) {
+
+        rentalPrice = basePrice * 1.15;
+
+    }
+
+    if ((currentYear - ageOfLicense) < 2) {
+
+        return rentalPrice = basePrice * 1.3;
+
+    }
+
+    if (currentYear - ageOfLicense < 3 && Season) {
+
+        rentalPrice = basePrice + (15 * rentalDays)
+
+    }
+
+    if (longRent(rentalDays) && !Season) {
+
+        rentalPrice = basePrice * 0.9;
+    }
+
+    return rentalPrice;
+
+}
+
+function driverIsTooYoung(driverAge) {
+
+    return driverAge < 18;
+}
+
+function restrictedDriver(driverAge, carType) {
+
+    return driverAge < 21 && carType !== 'Compact';
+
+}
+
+function longRent(rentalDays) {
+
+    return rentalDays > 10;
+
+}
+
+function getrentalDays(pickupDate, dropOffDate) {
+
+    const carpickup = new Date(pickupDate);
+    const cardropoff = new Date(dropOffDate);
+    const differenceTime = Math.abs(cardropoff - carpickup);
     const differenceDays = Math.ceil(differenceTime / (1000 * 60 * 60 * 24));
 
     return differenceDays
 }
 
-function highSeason(PickupDate, DropoffDate) {
+function highSeason(pickupDate, dropOffDate) {
 
-    const pickup = new Date(PickupDate);
-    const dropoff = new Date(DropoffDate);
+    const pickup = new Date(pickupDate);
+    const dropoff = new Date(dropOffDate);
     const pickupMonth = pickup.getMonth();
     const dropoffMonth = dropoff.getMonth();
 
     if (pickupMonth >= 4 && dropoffMonth <= 10) {
         return true;
     }
+    return false;
 }
 
-exports.Price = Price;
+exports.calculateTotalPriceAndCheckIfValid = calculateTotalPriceAndCheckIfValid;
