@@ -1,5 +1,5 @@
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age, license) {
+function price( pickupDate, dropoffDate, type, age, license) {
     const clazz = getClazz(type);
     const days = get_days(pickupDate, dropoffDate);
     const season = getSeason(pickupDate, dropoffDate);
