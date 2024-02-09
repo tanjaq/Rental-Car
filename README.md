@@ -1,4 +1,4 @@
-# Refactoring - car rental company price calculator
+# Unit Testing - car rental company price calculator
 
 The client's request is to improve the program code to meet clean code standards while ensuring that all specified business requirements are met. This includes addressing bugs in the current code and incorporating any missing pieces of code to fulfill new requirements.
 
@@ -10,10 +10,11 @@ To solve the task, proceed as follows:
 3. Run `npm install` to install all dependencies
 4. To run the project call `node index.js` start the app
 5. Application will be available at http://localhost:3000/
-6. Make all necessary changes and commit
-7. Make a pull request for the original repo on GitHub
+6. To run the Jest test call `npx jest --coverage`
+7. Write tests to assure 100% coverage
+8. Make a pull request for the original repo on GitHub
 8. Grade is awarded to students who:
-   -- Submits and shows a pull request with appropriately structured code.
+   -- Submits and shows a pull request with all tests covering the code.
 
 # Current business requirements
 
@@ -35,14 +36,4 @@ To solve the task, proceed as follows:
 
 - Individuals holding a driver's license for less than a year are ineligible to rent. 
 - If the driver's license has been held for less than two years, the rental price is increased by 30%.
-- If the driver's license has been held for less than three years, then an additional 15 euros will be added to the daily rental price during high season.
-
-## Reminder/cheatsheet for refactoring
-
-- Use meaningful names for variables, functions and classes.
-- Use consistent indentation.
-- Separate long functions into smaller parts. 
-- Remove magic numbers - create constants. 
-- Remove unused or unnecessary code. 
-
-- Last but not least: Your code should still work after the refactoring!
+- If the driver's license has been held for less than three years, then an additional 15 euros will be added to the daily rental price during high season. 
