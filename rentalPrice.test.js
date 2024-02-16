@@ -1,6 +1,6 @@
 const  {price}  = require('./rentalPrice');
 test('Driver too young - cannot quote the price', () => {
-    expect(price(13, 'Compact', 'High', 7, 2)).toBe('Driver too young - cannot quote the price');
+    expect(price(2, 'Compact', 'High', 13, 2)).toBe('Driver too young - cannot quote the price');
 });
 
 test('Driver has to have a license for at least a year to rent a car', () => {

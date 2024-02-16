@@ -28,7 +28,7 @@ function price( pickupDate, dropoffDate, type, age, license) {
 
         return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
     }
-
+    //weekday 0-6, 0 = sunday, 6 = saturday lisada
     function getSeason(pickupDate, dropoffDate) {
         const pickup = new Date(pickupDate);
         const dropoff = new Date(dropoffDate);
@@ -91,3 +91,5 @@ function price( pickupDate, dropoffDate, type, age, license) {
 }
 
 exports.price = price;
+
+exports.rentalprice = rentalprice;
