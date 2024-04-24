@@ -23,7 +23,7 @@ app.post('/', (req, res) => {
         Date.parse(post.dropoffdate),
         String(post.type),
         Number(post.age),
-        String(post.dateoflicense)
+        Date.parse(post.dateoflicense)
     );
     res.send(formHtml + resultHtml.replaceAll('$0 per day', result));
 });
