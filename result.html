@@ -1,3 +1,4 @@
+<!-- result.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,6 +27,7 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: none; /* Initially hide all car class results */
         }
         .car-name {
             font-size: 18px;
@@ -40,25 +42,25 @@
 </head>
 <body>
     <ul class="car-list">
-        <li class="car-item">
+        <li class="car-item" id="compact-result">
             <div class="car-details">
                 <div class="car-name">Compact Car</div>
                 <div class="car-price">Price: $0 per day</div>
             </div>
         </li>
-        <li class="car-item">
+        <li class="car-item" id="electric-result">
             <div class="car-details">
                 <div class="car-name">Electric Car</div>
                 <div class="car-price">Price: $0 per day</div>
             </div>
         </li>
-        <li class="car-item">
+        <li class="car-item" id="cabrio-result">
             <div class="car-details">
                 <div class="car-name">Cabrio</div>
                 <div class="car-price">Price: $0 per day</div>
             </div>
         </li>
-        <li class="car-item">
+        <li class="car-item" id="racer-result">
             <div class="car-details">
                 <div class="car-name">Racer</div>
                 <div class="car-price">Price: $0 per day</div>
