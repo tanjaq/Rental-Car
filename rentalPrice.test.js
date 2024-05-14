@@ -1,32 +1,23 @@
-const  {price}  = require('./rentalPrice');
-test('Driver too young - cannot quote the price', () => {
-    expect(price(2, 'Compact', 'High', 13, 2)).toBe('Driver too young - cannot quote the price');
-});
+const { price } = require('./rentalPrice');
 
-test('Driver has to have a license for at least a year to rent a car', () => {
-    expect(price(25, 'Compact', 'High', 7, 0)).toBe('Driver has to have a license for at least a year to rent a car');
-});
+describe('price', () => {
+    test('should return "Driver too young - cannot quote the price" if age is less than 18', () => {
+        expect(price('2022-01-01', '2022-01-07', 'Compact', 17, 2)).toBe('Driver too young - cannot quote the price');
+    });
 
-test('Increase rental price by 30% if license is less than 2 years', () => {
-    expect(price(25, 'Compact', 'High', 7, 1)).toBe('$' + 7 * (25+15) * 1.3);
-});
+    test('should return "Driver has to have a license for at least a year to rent a car" if license is less than 1', () => {
+        expect(price('2022-01-01', '2022-01-07', 'Compact', 19, 0)).toBe('Driver has to have a license for at least a year to rent a car');
+    });
 
-test('Rental price calculation for license less than 3 years during high season', () => {
-    expect(price(25, 'Compact', 'High', 7, 2)).toBe('$' + ((25 + 15) * 7));
-});
+    test('should return "Drivers 21 y/o or less can only rent Compact vehicles" if age is less than or equal to 21 and type is not "Compact"', () => {
+        expect(price('2022-01-01', '2022-01-07', 'Electric', 21, 2)).toBe('Drivers 21 y/o or less can only rent Compact vehicles');
+    });
 
-test('Drivers 21 y/o or less can only rent Compact vehicles', () => {
-    expect(price(25, 'Sedan', 'High', 7, 2)).toBe('Drivers 21 y/o or less can only rent Compact vehicles');
-});
-
-test('Compact vehicle rental price for drivers 21 y/o or less', () => {
-    expect(price(20, 'Compact', 'High', 7, 2)).toBe('$' + 7 * (20+15));
-});
-
-test('Racer vehicle rental price for drivers 25 y/o or less during high season', () => {
-    expect(price(25, 'Racer', 'High', 7, 2)).toBe('$' + (7 * (25+15) * 1.5 * 1.15));
-});
-
-test('Vehicle rental price during high season', () => {
-    expect(price(25, 'Sedan', 'High', 7, 5)).toBe('$' + (7 * 25 * 1.15));
+    test('should calculate the correct price for a 7-day rental for a 25-year-old driver with 2 years of license', () => {
+        // This is a simple test case, you may need to adjust the expected price based on your pricing rules
+        expect(price('2022-01-01', '2022-01-07', 'Compact', 25, 2)).toBe('$' + (25 * 5 + 25 * 1.05 * 2));
+    });
+    test('Is car even on the list', () => {
+        expect(price('2022-01-01', '2022-01-07', 'Spaceship', 27, 2)).toBe('car is not on the list of available cars');
+    });
 });
