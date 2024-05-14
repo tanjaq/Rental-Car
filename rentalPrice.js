@@ -1,40 +1,13 @@
 function price(pickupDate, dropoffDate, type, age, license) {
     const clazz = getClazz(type);
-    const days = get_days(pickupDate, dropoffDate);
-    let rentalprice = age * days;
-    const averageDailyPrice = rentalprice / days;
+    const rentalDays = Math.floor((new Date(dropoffDate) - new Date(pickupDate)) / (1000 * 60 * 60 * 24));
 
     function getClazz(type) {
         const types = ["Compact", "Electric", "Cabrio", "Racer"];
         if (!types.includes(type)) {
             return "Unknown";
         }
-        return
-    }
-
-    function get_days(pickupDate, dropoffDate) {
-        const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-        const firstDate = new Date(pickupDate);
-        const secondDate = new Date(dropoffDate);
-
-        return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
-    }
-
-    function getSeason(date) {
-        const month = new Date(date).getMonth();
-        const start = 4;
-        const end = 10;
-
-        if (month >= start && month <= end) {
-            return "High";
-        } else {
-            return "Low";
-        }
-    }
-
-    function isWeekend(date) {
-        const dayOfWeek = new Date(date).getDay();
-        return dayOfWeek === 0 || dayOfWeek === 6; // 0 = Sunday, 6 = Saturday
+        return type;
     }
 
     if (age < 18) {
@@ -53,22 +26,26 @@ function price(pickupDate, dropoffDate, type, age, license) {
     }
 
     let currentDate = new Date(pickupDate);
-    rentalprice = 0; // Reset rentalprice to accumulate the adjusted daily prices
+    let rentalprice = 0; // Reset rentalprice to accumulate the adjusted daily prices
 
     while (currentDate <= new Date(dropoffDate)) {
         const season = getSeason(currentDate);
-        let dayPrice = averageDailyPrice;
+        let dayPrice = age; // daily price is age
 
-        if (license < 3 && season === "High") {
-            dayPrice += 15;
+        if (license < 2) {
+            dayPrice *= 1.3; // 30% increase for license less than 2 years
         }
 
-        if (clazz === "Racer" && age <= 25 && season === "High") {
-            dayPrice *= 1.5;
+        if (license < 3 && season === "High") {
+            dayPrice += 15; // additional 15 euros for license less than 3 years in high season
+        }
+
+        if (clazz === "Racer" && age <= 25 && season !== "Low") {
+            dayPrice *= 1.5; // 50% increase for Racer and age <= 25 except in low season
         }
 
         if (season === "High") {
-            dayPrice *= 1.15;
+            dayPrice *= 1.15; // 15% increase for high season
         }
 
         if (isWeekend(currentDate)) {
@@ -80,15 +57,25 @@ function price(pickupDate, dropoffDate, type, age, license) {
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    if (days > 10 && getSeason(dropoffDate) === "Low") {
-        rentalprice *= 0.9;
-    }
-
-    if (license < 2) {
-        rentalprice *= 1.3;
+    if (rentalDays > 10 && getSeason(new Date(dropoffDate)) === "Low") {
+        rentalprice *= 0.9; // 10% discount for more than 10 days except in high season
     }
 
     return '$' + rentalprice;
+}
+
+function getSeason(date) {
+    const month = date.getMonth();
+    if (month >= 3 && month <= 9) { // April to October is high season
+        return "High";
+    } else {
+        return "Low"; // November to March is low season
+    }
+}
+
+function isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6; // 0 (Sunday) or 6 (Saturday)
 }
 
 exports.price = price;
