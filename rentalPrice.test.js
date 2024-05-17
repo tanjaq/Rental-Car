@@ -39,6 +39,6 @@ describe('price', () => {
     });
     test('10 day discount in low', () => {
         // This is a simple test case, you may need to adjust the expected price based on your pricing rules
-        expect(price('2022-01-01', '2022-01-11', 'Compact', 25, 4)).toBe('$' + ((25 * 9  + 25 * 1.05 * 2)*0.9));
+        expect(price('2022-01-01', '2022-01-11', 'Compact', 25, 4)).toBe('$' + ((25 * 7  + 25 * 1.05 * 4)*0.9));
     });
 });

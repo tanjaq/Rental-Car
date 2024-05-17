@@ -1,7 +1,5 @@
 function price(pickupDate, dropoffDate, type, age, license) {
     const clazz = getClazz(type);
-    const rentalDays = Math.floor((new Date(dropoffDate) - new Date(pickupDate)) / (1000 * 60 * 60 * 24));
-
     function getClazz(type) {
         const types = ["Compact", "Electric", "Cabrio", "Racer"];
         if (!types.includes(type)) {
@@ -10,6 +8,7 @@ function price(pickupDate, dropoffDate, type, age, license) {
         return type;
     }
 
+    const rentalDays = Math.floor((new Date(dropoffDate) - new Date(pickupDate)) / (1000 * 60 * 60 * 24))+1;
     if (age < 18) {
         return "Driver too young - cannot quote the price";
     }
@@ -33,11 +32,13 @@ function price(pickupDate, dropoffDate, type, age, license) {
         let dayPrice = age; // daily price is age
 
         if (license < 2) {
-            dayPrice *= 1.3; // 30% increase for license less than 2 years
+            dayPrice *= 1.3; // 30% increase for license less than 2 yearsõ
+
         }
 
         if (license < 3 && season === "High") {
             dayPrice += 15; // additional 15 euros for license less than 3 years in high season
+
         }
 
         if (clazz === "Racer" && age <= 25 && season !== "Low") {
@@ -55,10 +56,11 @@ function price(pickupDate, dropoffDate, type, age, license) {
         rentalprice += dayPrice;
 
         currentDate.setDate(currentDate.getDate() + 1);
-    }
 
+    }
     if (rentalDays > 10 && getSeason(new Date(dropoffDate)) === "Low") {
         rentalprice *= 0.9; // 10% discount for more than 10 days except in high season
+
     }
 
     return '$' + rentalprice;
