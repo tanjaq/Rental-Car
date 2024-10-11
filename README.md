@@ -1,8 +1,4 @@
-# Refactoring - car rental company price calculator
-
-The client's request is to improve the program code to meet clean code standards while ensuring that all specified business requirements are met. This includes addressing bugs in the current code and incorporating any missing pieces of code to fulfill new requirements.
-
-# Current business requirements
+# Business Requirements - car rental company price calculator
 
 - Rental cars are categorized into 4 classes: Compact, Electric, Cabrio, Racer.
 
