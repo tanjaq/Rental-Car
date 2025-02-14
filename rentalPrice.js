@@ -1,6 +1,4 @@
-
 function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
-    const vehicleClass = getVehicleClass(carType);
     const rentalDays = getRentalDays(pickupDate, dropoffDate);
     const season = getSeason(pickupDate, dropoffDate);
 
@@ -12,11 +10,19 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
         return "Driver too young - cannot quote the price";
     }
 
-    if (driverAge <= 21 && vehicleClass !== "Compact") {
+    if (driverAge <= 21 && carType !== "Compact") {
         return "Drivers 21 y/o or less can only rent Compact vehicles";
     }
 
     let rentalPrice = driverAge * rentalDays;
+
+    if (carType === "Racer" && driverAge <= 25 && season !== "Low") {
+        rentalPrice *= 1.5;
+    }
+
+    if (season === "High") {
+        rentalPrice *= 1.15;
+    }
 
     if (licenseDuration < 2) {
         rentalPrice *= 1.3;
@@ -26,24 +32,11 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
         rentalPrice += 15 * rentalDays;
     }
 
-    if (vehicleClass === "Racer" && driverAge <= 25 && season !== "Low") {
-        rentalPrice *= 1.5;
-    }
-
-    if (season === "High") {
-        rentalPrice *= 1.15;
-    }
-
     if (rentalDays > 10 && season === "Low") {
         rentalPrice *= 0.9;
     }
 
     return '$' + rentalPrice.toFixed(2);
-}
-
-function getVehicleClass(carType) {
-    const validTypes = ["Compact", "Electric", "Cabrio", "Racer"];
-    return validTypes.includes(carType) ? carType : "Unknown";
 }
 
 function getRentalDays(pickupDate, dropoffDate) {
