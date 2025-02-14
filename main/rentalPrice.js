@@ -16,12 +16,15 @@ function calculateRentalPrice(pickupDate, dropoffDate, carType, driverAge) {
 
   let basePrice = calculateBaseRentalPrice(driverAge, rentalDays);
 
+  let weekendDaysCounter = getWeekendDays(pickupDate, dropoffDate);
+  
   let rentalPrice = calculateSurcharge(
     basePrice,
     driverAge,
     carType,
     rentalDays,
-    highSeason
+    highSeason,
+    weekendDaysCounter
   );
 
   return formatRentalPrice(rentalPrice);
@@ -30,15 +33,21 @@ function calculateRentalPrice(pickupDate, dropoffDate, carType, driverAge) {
 function calculateBaseRentalPrice(driverAge, rentalDays) {
   return driverAge * rentalDays;
 }
-
 function calculateSurcharge(
   basePrice,
   driverAge,
   carType,
   rentalDays,
-  highSeason
+  highSeason,
+  weekendDaysCounter
 ) {
   let rentalPrice = basePrice;
+
+  if (weekendDaysCounter > 0) {
+    rentalPrice =
+       basePrice - (basePrice / rentalDays * weekendDaysCounter) + 
+      (basePrice / rentalDays * weekendDaysCounter) * 1.05;
+  }
 
   if (isRacerUnder25(driverAge, carType) && highSeason) {
     rentalPrice = basePrice * 1.5;
@@ -51,6 +60,7 @@ function calculateSurcharge(
   if (isLongRental(rentalDays) && !highSeason) {
     rentalPrice = basePrice * 0.9;
   }
+
   return rentalPrice;
 }
 
@@ -75,6 +85,11 @@ function isHighSeason(pickupDate, dropoffDate) {
   return false;
 }
 
+function isWeekend(date) {
+  date = new Date(date);
+  return date.getDay() % 6 === 0;
+}
+
 function isDriverTooYoung(driverAge) {
   return driverAge < 18;
 }
@@ -95,8 +110,23 @@ function formatRentalPrice(rentalPrice) {
   return "Price: $" + rentalPrice.toFixed(2);
 }
 
+function getWeekendDays(datestart, dateend) {
+  const rentaldays = Math.round((new Date(dateend) - new Date(datestart)) / DAY_IN_MILLISECONDS) + 1;
+  let weekendDaysCounter = 0; 
+  for (let i = 0; i < rentaldays; i++) {
+    let currentDate = new Date(datestart);
+    currentDate.setDate(currentDate.getDate() + i);
+    if (isWeekend(currentDate)) {
+      weekendDaysCounter++;
+    }
+  }
+  return weekendDaysCounter;
+}
+
 exports.calculateRentalPrice = calculateRentalPrice;
 exports.calculateBaseRentalPrice = calculateBaseRentalPrice;
 exports.calculateSurcharge = calculateSurcharge;
 exports.isHighSeason = isHighSeason;
 exports.formatRentalPrice = formatRentalPrice;
+exports.isWeekend = isWeekend;
+exports.getWeekendDays = getWeekendDays;
