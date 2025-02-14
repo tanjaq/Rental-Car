@@ -17,21 +17,29 @@ const resultHtml = fs.readFileSync('result.html', 'utf8');
 app.post('/', (req, res) => {
     const post = req.body;
     const result = rental.price(
-        String(post.pickup),
-        String(post.dropoff),
         Date.parse(post.pickupdate),
         Date.parse(post.dropoffdate),
-        String(post.type),
-        Number(post.age)
+        String(post.carType),
+        Number(post.driverAge),
+        Number(post.licenseDuration)
     );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+    const carNames = {
+        "Compact": "Compact Car",
+        "Electric": "Electric Car",
+        "Cabrio": "Cabrio Car",
+        "Racer": "Racer Car"
+    };
+    const filteredResultHtml = resultHtml
+        .replace('Car Name', carNames[post.carType])
+        .replace('Price: $0 per day', `Price: ${result} per day`);
+
+    res.send(formHtml + filteredResultHtml);
 });
 
 app.get('/', (req, res) => {
     res.send(formHtml);
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });

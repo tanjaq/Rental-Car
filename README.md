@@ -47,7 +47,7 @@ To solve the task, proceed as follows:
 
 - Last but not least: Your code should still work after the refactoring!
 
-## 16.02 Tunniülesanne
+## TDD Tunniülesanne
 * Tänase tunni ülesandeks on paarisprogrammeerimine ja TDD.
 * Palun jagunege paaridesse ja võtke üks versioon Car Rental refaktoreeritud ja testitud koodist
 * Lisage uus funktsionaalsus kasutades TDD-d:
