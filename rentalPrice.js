@@ -1,49 +1,73 @@
+const SEASONS = {
+  HIGH: 'High',
+  LOW: 'Low'
+};
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
+const CLASSES = {
+  COMPACT: 'Compact',
+  ELECTRIC: 'Electric',
+  CABRIO: 'Cabrio',
+  RACER: 'Racer'
+};
+
+const SEASON_START = 4; // April
+const SEASON_END = 10; // October
+
+function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) {
   const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
+  const days = getDays(pickupDate, dropoffDate);
   const season = getSeason(pickupDate, dropoffDate);
 
   if (age < 18) {
       return "Driver too young - cannot quote the price";
   }
-
-  if (age <= 21 && clazz !== "Compact") {
+  if (age <= 21 && clazz !== CLASSES.COMPACT) {
       return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
-
-  let rentalprice = age * days;
-
-  if (clazz === "Racer" && age <= 25 && season === "High") {
-      rentalprice *= 1.5;
+  if (licenseYears < 1) {
+      return "Driver must hold a license for at least one year";
   }
 
-  if (season === "High" ) {
-    rentalprice *= 1.15;
+  let rentalPrice = age * days;
+
+  if (licenseYears < 2) {
+      rentalPrice *= 1.3;
   }
 
-  if (days > 10 && season === "Low" ) {
-      rentalprice *= 0.9;
+  if (licenseYears >= 2 && licenseYears < 3 && season === SEASONS.HIGH) {
+      rentalPrice += 15 * days;
   }
-  return '$' + rentalprice;
+
+  if (clazz === CLASSES.RACER && age <= 25 && season === SEASONS.HIGH) {
+      rentalPrice *= 1.5;
+  }
+
+  if (season === SEASONS.HIGH) {
+      rentalPrice *= 1.15;
+  }
+
+  if (days > 10 && season === SEASONS.LOW) {
+      rentalPrice *= 0.9;
+  }
+
+  return `$${rentalPrice.toFixed(2)}`;
 }
-
 function getClazz(type) {
   switch (type) {
-      case "Compact":
-          return "Compact";
-      case "Electric":
-          return "Electric";
-      case "Cabrio":
-          return "Cabrio";
-      case "Racer":
-          return "Racer";
-      default:
-          return "Unknown";
+    case CLASSES.COMPACT:
+      return CLASSES.COMPACT;
+    case CLASSES.ELECTRIC:
+      return CLASSES.ELECTRIC;
+    case CLASSES.CABRIO:
+      return CLASSES.CABRIO;
+    case CLASSES.RACER:
+      return CLASSES.RACER;
+    default:
+      return "Unknown";
   }
 }
 
-function get_days(pickupDate, dropoffDate) {
+function getDays(pickupDate, dropoffDate) {
   const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
   const firstDate = new Date(pickupDate);
   const secondDate = new Date(dropoffDate);
@@ -55,20 +79,17 @@ function getSeason(pickupDate, dropoffDate) {
   const pickup = new Date(pickupDate);
   const dropoff = new Date(dropoffDate);
 
-  const start = 4; 
-  const end = 10;
-
-  const pickupMonth = pickup.getMonth();
-  const dropoffMonth = dropoff.getMonth();
+  const pickupMonth = pickup.getMonth() + 1; // getMonth() returns 0-11
+  const dropoffMonth = dropoff.getMonth() + 1;
 
   if (
-      (pickupMonth >= start && pickupMonth <= end) ||
-      (dropoffMonth >= start && dropoffMonth <= end) ||
-      (pickupMonth < start && dropoffMonth > end)
+    (pickupMonth >= SEASON_START && pickupMonth <= SEASON_END) ||
+    (dropoffMonth >= SEASON_START && dropoffMonth <= SEASON_END) ||
+    (pickupMonth < SEASON_START && dropoffMonth > SEASON_END)
   ) {
-      return "High";
+    return SEASONS.HIGH;
   } else {
-      return "Low";
+    return SEASONS.LOW;
   }
 }
 
