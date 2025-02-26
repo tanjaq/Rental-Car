@@ -1,4 +1,4 @@
-const { price } = require("../rentalPrice");
+const { price, getWeekendExtraCharge } = require("../rentalPrice");
 
 test("ban for driver with less than 1 year of license", () => {
 	const pickupDate = "2024-07-01";
@@ -97,7 +97,7 @@ test("rental price for a driver with more than 10 days in low season", () => {
 	const carType = "Compact";
 	const driverAge = 30;
 	const licenseDuration = 5;
-	const expectedPrice = "$324.00";
+	const expectedPrice = "$327.00";
 
 	const result = price(pickupDate, dropoffDate, carType, driverAge, licenseDuration);
 
@@ -110,7 +110,7 @@ test("rental price for a driver with more than 10 days in high season", () => {
 	const carType = "Compact";
 	const driverAge = 30;
 	const licenseDuration = 5;
-	const expectedPrice = "$414.00";
+	const expectedPrice = "$417.00";
 
 	const result = price(pickupDate, dropoffDate, carType, driverAge, licenseDuration);
 
@@ -123,7 +123,7 @@ test("rental price for a driver with pickup date in low season and dropoff date 
 	const carType = "Compact";
 	const driverAge = 30;
 	const licenseDuration = 5;
-	const expectedPrice = "$240.00";
+	const expectedPrice = "$243.00";
 
 	const result = price(pickupDate, dropoffDate, carType, driverAge, licenseDuration);
 
@@ -136,7 +136,7 @@ test("rental price for a driver with pickup date in high season and dropoff date
 	const carType = "Compact";
 	const driverAge = 30;
 	const licenseDuration = 5;
-	const expectedPrice = "$138.00";
+	const expectedPrice = "$139.50";
 
 	const result = price(pickupDate, dropoffDate, carType, driverAge, licenseDuration);
 
@@ -149,9 +149,42 @@ test("rental price for a driver with pickup date in high season and dropoff date
 	const carType = "Compact";
 	const driverAge = 30;
 	const licenseDuration = 5;
-	const expectedPrice = "$345.00";
+	const expectedPrice = "$348.00";
 
 	const result = price(pickupDate, dropoffDate, carType, driverAge, licenseDuration);
 
 	expect(result).toBe(expectedPrice);
+});
+
+test("weekend extra charge for a rental period with no weekends", () => {
+	const pickupDate = "2024-07-01";
+	const dropoffDate = "2024-07-05";
+	const driverAge = 30;
+	const expectedCharge = 0;
+
+	const result = getWeekendExtraCharge(pickupDate, dropoffDate, driverAge);
+
+	expect(result).toBe(expectedCharge);
+});
+
+test("weekend extra charge for a rental period with one weekend", () => {
+	const pickupDate = "2024-07-04";
+	const dropoffDate = "2024-07-07";
+	const driverAge = 30;
+	const expectedCharge = 30 * 0.05 * 2;
+
+	const result = getWeekendExtraCharge(pickupDate, dropoffDate, driverAge);
+
+	expect(result).toBe(expectedCharge);
+});
+
+test("weekend extra charge for a rental period with multiple weekends", () => {
+	const pickupDate = "2024-07-01";
+	const dropoffDate = "2024-07-14";
+	const driverAge = 30;
+	const expectedCharge = 30 * 0.05 * 4;
+
+	const result = getWeekendExtraCharge(pickupDate, dropoffDate, driverAge);
+
+	expect(result).toBe(expectedCharge);
 });

@@ -9,7 +9,7 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
     if (driverAge < 18) {
         return "Driver too young - cannot quote the price";
     }
-
+    price = price;
     if (driverAge <= 21 && carType !== "Compact") {
         return "Drivers 21 y/o or less can only rent Compact vehicles";
     }
@@ -36,6 +36,8 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
         rentalPrice *= 0.9;
     }
 
+    rentalPrice += getWeekendExtraCharge(pickupDate, dropoffDate, driverAge);
+
     return '$' + rentalPrice.toFixed(2);
 }
 
@@ -51,4 +53,21 @@ function getSeason(pickupDate) {
     return (month >= 4 && month <= 10) ? "High" : "Low";
 }
 
+function getWeekendExtraCharge(pickupDate, dropoffDate, driverAge) {
+    let date = new Date(pickupDate);
+    const endDate = new Date(dropoffDate);
+    let extraCharge = 0;
+
+    while (date <= endDate) {
+        const day = date.getDay();
+        if (day === 6 || day === 0) {
+            extraCharge += (driverAge * 0.05);
+        }
+        date.setDate(date.getDate() + 1);
+    }
+
+    return extraCharge;
+}
+
 exports.price = price;
+exports.getWeekendExtraCharge = getWeekendExtraCharge;
