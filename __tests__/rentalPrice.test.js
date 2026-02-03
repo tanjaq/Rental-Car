@@ -63,4 +63,40 @@ describe('Car rental price calculator', () => {
     const season = getSeason('2026-03-31', '2026-04-02');
     expect(season).toBe('High');
   });
+
+  test('normalizeClazz returns Unknown for unknown or missing types', () => {
+    expect(normalizeClazz('unknown-type')).toBe('Unknown');
+    expect(normalizeClazz(null)).toBe('Unknown');
+    expect(normalizeClazz()).toBe('Unknown');
+  });
+
+  test('getSeason returns Low when no day is in high season', () => {
+    const season = getSeason('2026-12-01', '2026-12-03');
+    expect(season).toBe('Low');
+  });
+
+  test('getRentalDays returns single day for same pickup and dropoff', () => {
+    const days = getRentalDays('2026-02-01', '2026-02-01');
+    expect(days.length).toBe(1);
+  });
+
+  test('normalizeClazz recognizes Electric and Cabrio types', () => {
+    expect(normalizeClazz('electric')).toBe('Electric');
+    expect(normalizeClazz('cabrio')).toBe('Cabrio');
+  });
+
+  test('price without licenseYears uses default and is ineligible', () => {
+    const res = price(null, null, '2026-02-01', '2026-02-02', 'Compact', 30);
+    expect(res).toBe("Drivers license held for less than a year - cannot quote the price");
+  });
+
+  test('getRentalDays returns empty array if pickup is after dropoff', () => {
+    const days = getRentalDays('2026-02-05', '2026-02-02');
+    expect(days.length).toBe(0);
+  });
+
+  test('Electric car pricing behaves correctly', () => {
+    const res = price(null, null, '2026-02-02', '2026-02-02', 'Electric', 30, 5);
+    expect(res).toBe('$30');
+  });
 });
