@@ -13,10 +13,10 @@ const HIGH_SEASON_MULTIPLIER = 1.15;
 const LONG_RENTAL_DISCOUNT = 0.9;
 const DRIVER_LICENSE_PRICE_INCREASE_PERCENTAGE = 0.30; // 30%
 const DRIVER_LICENSE_HIGH_SEASON_SURCHARGE = 15; // euros
+const WEEKEND_MULTIPLIER = 1.05; // 5% weekend rate increase
 
 function price(pickup, dropoff, pickupDate, dropoffDate, vehicleType, driverAge, licenseYears) {
   const vehicleClass = normalizeVehicleType(vehicleType);
-  const rentalDays = calculateRentalDays(pickupDate, dropoffDate);
   const season = determineSeason(pickupDate, dropoffDate);
 
   // Validation: Check driver's license eligibility
@@ -34,31 +34,58 @@ function price(pickup, dropoff, pickupDate, dropoffDate, vehicleType, driverAge,
       return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
 
-  // Calculate base price
-  let rentalPrice = calculateBasePrice(driverAge, rentalDays, vehicleClass, season);
+  // Calculate price with weekday/weekend breakdown
+  const priceData = calculatePriceWithWeekendBreakdown(driverAge, pickupDate, dropoffDate, vehicleClass, season);
 
   // Apply driver's license surcharges
-  rentalPrice = applyLicenseSurcharges(rentalPrice, licenseYears, rentalDays, season);
+  let rentalPrice = applyLicenseSurcharges(priceData.price, licenseYears, priceData.days, season);
 
   return '$' + Math.round(rentalPrice * 100) / 100;
 }
 
-function calculateBasePrice(driverAge, rentalDays, vehicleClass, season) {
-  let basePrice = driverAge * rentalDays;
-
-  if (vehicleClass === "Racer" && driverAge <= RACER_INSURANCE_AGE && season === "High") {
-      basePrice *= YOUNG_DRIVER_RACER_MULTIPLIER;
+function calculatePriceWithWeekendBreakdown(driverAge, pickupDate, dropoffDate, vehicleClass, season) {
+  const startDate = new Date(pickupDate);
+  const endDate = new Date(dropoffDate);
+  
+  let totalPrice = 0;
+  let dayCount = 0;
+  let currentDate = new Date(startDate);
+  
+  // Iterate through each day from pickup to dropoff (exclusive)
+  while (currentDate < endDate) {
+    const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+    
+    // Calculate daily rate
+    let dailyRate = driverAge;
+    
+    // Apply weekend multiplier if applicable
+    if (isWeekend) {
+      dailyRate *= WEEKEND_MULTIPLIER;
+    }
+    
+    // Apply racer surcharge for age <= 25 in high season
+    if (vehicleClass === "Racer" && driverAge <= RACER_INSURANCE_AGE && season === "High") {
+      dailyRate *= YOUNG_DRIVER_RACER_MULTIPLIER;
+    }
+    
+    // Apply high season multiplier
+    if (season === "High") {
+      dailyRate *= HIGH_SEASON_MULTIPLIER;
+    }
+    
+    totalPrice += dailyRate;
+    dayCount++;
+    currentDate.setDate(currentDate.getDate() + 1);
   }
-
-  if (season === "High") {
-    basePrice *= HIGH_SEASON_MULTIPLIER;
+  
+  // Apply long rental discount (0.9x for > 10 days in low season)
+  // Note: This discount applies to the entire rental, not individual days
+  if (dayCount > YOUNG_DRIVER_MIN_DAYS && season === "Low") {
+    totalPrice *= LONG_RENTAL_DISCOUNT;
   }
-
-  if (rentalDays > YOUNG_DRIVER_MIN_DAYS && season === "Low") {
-      basePrice *= LONG_RENTAL_DISCOUNT;
-  }
-
-  return basePrice;
+  
+  return { price: totalPrice, days: dayCount };
 }
 
 function applyLicenseSurcharges(basePrice, licenseYears, rentalDays, season) {
