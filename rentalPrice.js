@@ -120,6 +120,10 @@ function applyLongRentalDiscount(rentalPrice, rentalDays, season) {
 }
 
 function getCarType(type) {
+  if (!type || typeof type !== 'string') {
+    return "Unknown";
+  }
+
   const normalizedType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
   
   switch (normalizedType) {
