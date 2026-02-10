@@ -91,15 +91,20 @@
 
             <label for="car-type">Car Type:</label>
             <select id="car-type" name="type">
-                <option value="compact">Compact</option>
+                <option value="Compact">Compact</option>
                 <option value="Electric">Electric</option>
-                <option value="cabrio">Cabrio</option>
-                <option value="racer">Racer</option>
+                <option value="Cabrio">Cabrio</option>
+                <option value="Racer">Racer</option>
             </select>
 
             <div class="form-group">
-                <label for="age">Diver's age</label>
-                <input type="number" class="form-control" name="age" required/>
+                <label for="age">Driver's age</label>
+                <input type="number" class="form-control" id="age" name="age" min="18" step="1" required />
+            </div>
+            <div>
+            <label for="license-years">Years holding a driver's license</label>
+            <input type="number" class="form-control" id="license-years" name="licenseYears" min="0" step="1"
+                required />
             </div>
 
             <button type="submit" class="btn btn-primary">Search</button>

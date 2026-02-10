@@ -7,7 +7,6 @@ const app = express();
 const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(express.static('public'));
 app.use('/pictures', express.static('images'));
 
@@ -16,22 +15,35 @@ const resultHtml = fs.readFileSync('result.html', 'utf8');
 
 app.post('/', (req, res) => {
     const post = req.body;
+    
     const result = rental.price(
         String(post.pickup),
         String(post.dropoff),
         Date.parse(post.pickupdate),
         Date.parse(post.dropoffdate),
         String(post.type),
-        Number(post.age)
+        Number(post.age),
+        Number(post.licenseYears)
     );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+
+    const compactPrice = result.compactPrice || "N/A";
+    const electricPrice = result.electricPrice || "N/A";
+    const cabrioPrice = result.cabrioPrice || "N/A";
+    const racerPrice = result.racerPrice || "N/A";
+
+    const resultHtmlWithPrice = resultHtml
+        .replace("{{compactPrice}}", compactPrice)
+        .replace("{{electricPrice}}", electricPrice)
+        .replace("{{cabrioPrice}}", cabrioPrice)
+        .replace("{{racerPrice}}", racerPrice);
+
+    res.send(formHtml + resultHtmlWithPrice);
 });
 
 app.get('/', (req, res) => {
     res.send(formHtml);
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
