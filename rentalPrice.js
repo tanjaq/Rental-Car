@@ -9,6 +9,7 @@ const LONG_RENTAL_LOW_SEASON_DISCOUNT = 0.9;
 const HIGH_SEASON_START_MONTH = 4;
 const HIGH_SEASON_END_MONTH = 10;
 const DAY = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+const WEEKEND_SURCHARGE = 1.05;
 
 const LICENSE_LESS_THAN_1_YEAR = 1;
 const LICENSE_LESS_THAN_2_YEARS = 2;
@@ -26,16 +27,16 @@ function price(pickupDate, dropOffDate, type, age, licenseDuration) {
   }
 
   if (licenseDuration < LICENSE_LESS_THAN_1_YEAR) {
-    return "Individuals holding a driver's license for less than a year are ineligible to rent.";
+    return "Driver's license held for less than 1 year - ineligible to rent";
   }
 
-  if (age <= COMPACT_RENTAL_MAX_AGE && type !== "Compact") {
+  if (age <= COMPACT_RENTAL_MAX_AGE && type !== "compact") {
     return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
 
-  let rentalPrice = age * rentalDuration;
+  let rentalPrice = getWeekdayWeekendBasePrice(pickupDate, dropOffDate, age);
 
-  if (type === "Racer" && age <= MAX_AGE_FOR_RACER_SURCHARGE && season === "High") {
+  if (type === "racer" && age <= MAX_AGE_FOR_RACER_SURCHARGE && season === "High") {
     rentalPrice *= RACER_HIGH_SEASON_MULTIPLIER;
   }
 
@@ -54,14 +55,30 @@ function price(pickupDate, dropOffDate, type, age, licenseDuration) {
   if (rentalDuration > LONG_RENTAL_THRESHOLD && season === "Low" ) {
     rentalPrice *= LONG_RENTAL_LOW_SEASON_DISCOUNT;
   }
-  return '$' + rentalPrice;
+  return '$' + formatPrice(rentalPrice);
 }
 
 function getRentalDuration(pickupDate, dropOffDate) {
   const firstDate = new Date(pickupDate);
   const secondDate = new Date(dropOffDate);
 
-  return Math.round(Math.abs((firstDate - secondDate) / DAY)) + 1;
+  const duration = Math.round(Math.abs((secondDate - firstDate) / DAY));
+  return Math.max(1, duration);
+}
+
+function getWeekdayWeekendBasePrice(pickupDate, dropOffDate, dailyRate) {
+  const firstDate = new Date(pickupDate);
+  const secondDate = new Date(dropOffDate);
+  const totalDays = getRentalDuration(firstDate, secondDate);
+  let total = 0;
+
+  for (let i = 0; i < totalDays; i += 1) {
+    const currentDate = new Date(firstDate.getTime() + i * DAY);
+    const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
+    total += dailyRate * (isWeekend ? WEEKEND_SURCHARGE : 1);
+  }
+
+  return total;
 }
 
 function getSeason(pickupDate, dropOffDate) {
@@ -80,6 +97,11 @@ function getSeason(pickupDate, dropOffDate) {
   } else {
     return "Low";
   }
+}
+
+function formatPrice(value) {
+  const rounded = Math.round(value * 100) / 100;
+  return rounded.toString();
 }
 
 exports.price = price;
