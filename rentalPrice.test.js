@@ -19,27 +19,39 @@ describe('price', () => {
     ).toBe('Drivers 21 y/o or less can only rent Compact vehicles');
   });
 
+  test('charges regular weekday pricing during low season', () => {
+    expect(
+      price('Tallinn', 'Tartu', '2025-01-06', '2025-01-08', 'Compact', 50, 10)
+    ).toBe('$150');
+  });
+
+  test('adds a weekend premium for weekend days', () => {
+    expect(
+      price('Tallinn', 'Tartu', '2025-01-09', '2025-01-11', 'Compact', 50, 10)
+    ).toBe('$152.5');
+  });
+
   test('calculates high-season racer pricing with surcharges', () => {
     expect(
       price('Tallinn', 'Tartu', '2025-06-01', '2025-06-05', 'rAcEr', 25, 1.5)
-    ).toBe('$366.56');
+    ).toBe('$369.37');
   });
 
   test('applies long rental discounts in low season', () => {
     expect(
       price('Tallinn', 'Tartu', '2025-01-01', '2025-01-12', 'Compact', 30, 5)
-    ).toBe('$324');
+    ).toBe('$329.4');
   });
 
   test('handles unknown car types across seasons', () => {
     expect(
       price('Tallinn', 'Tartu', '2025-02-01', '2025-11-01', 'Truck', 30, 5)
-    ).toBe('$9453');
+    ).toBe('$9589.28');
   });
 
   test('handles non-string car type values', () => {
     expect(
       price('Tallinn', 'Tartu', '2025-03-01', '2025-03-03', 123, 30, 5)
-    ).toBe('$90');
+    ).toBe('$93');
   });
 });
