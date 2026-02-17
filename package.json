@@ -16,5 +16,8 @@
     "test": "jest",
     "start": "node index.js",
     "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0"
   }
 }
