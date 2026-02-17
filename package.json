@@ -1,14 +1,20 @@
 {
-    "name": "car-rental",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "dependencies": {
-        "body-parser": "^1.20.2",
-        "express": "^4.18.2",
-        "fs": "^0.0.1-security"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "ISC"
+  "name": "car-rental",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "jest": "^30.2.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "test": "jest",
+    "start": "node index.js",
+    "test:coverage": "jest --coverage"
+  }
 }
