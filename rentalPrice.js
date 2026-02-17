@@ -1,33 +1,3 @@
-const SEASON = {
-    HIGH: "High",
-    LOW: "Low",
-    HIGH_START_MONTH: 3,
-    HIGH_END_MONTH: 9
-};
-
-const CAR_CLASSES = {
-    COMPACT: "Compact",
-    ELECTRIC: "Electric",
-    CABRIO: "Cabrio",
-    RACER: "Racer"
-};
-
-const RULES = {
-    MIN_RENTAL_AGE: 18,
-    COMPACT_ONLY_MAX_AGE: 21,
-    RACER_YOUNG_DRIVER_MAX_AGE: 25,
-
-    HIGH_SEASON_INCREASE: 1.15,
-    LONG_RENTAL_DISCOUNT: 0.9,
-
-    RACER_YOUNG_DRIVER_INCREASE: 1.5,
-
-    LICENSE_UNDER_2_YEARS_INCREASE: 1.3,
-    LICENSE_HIGH_SEASON_DAILY_FEE: 15,
-
-    WEEKEND_INCREASE: 1.05
-};
-
 function calculatePrice(pickupDate, dropoffDate, carType, driverAge, licenseYears) {
     validateEligibility(carType, driverAge, licenseYears);
 
