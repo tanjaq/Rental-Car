@@ -92,7 +92,7 @@
             <label for="car-type">Car Type:</label>
             <select id="car-type" name="type">
                 <option value="compact">Compact</option>
-                <option value="Electric">Electric</option>
+                <option value="electric">Electric</option>
                 <option value="cabrio">Cabrio</option>
                 <option value="racer">Racer</option>
             </select>
@@ -100,6 +100,11 @@
             <div class="form-group">
                 <label for="age">Diver's age</label>
                 <input type="number" class="form-control" name="age" required/>
+            </div>
+
+            <div class="form-group">
+                <label for="license-issued">Driver's license issue date</label>
+                <input type="date" class="form-control" id="license-issued" name="licenseissued" required />
             </div>
 
             <button type="submit" class="btn btn-primary">Search</button>
