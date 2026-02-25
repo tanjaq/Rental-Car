@@ -1,17 +1,17 @@
-const { price, getDays, getSeason, normalizeCarClass } = require('./rentalPrice');
+const { price, getDays, getSeason, normalizeCarClass, getWeekendDays } = require('./rentalPrice');
 
 // Helper: create a date string for a given month (0-indexed) and year
 function dateMs(year, month, day) {
   return new Date(year, month, day).getTime();
 }
 
-// High season dates (April=3 through October=9)
-const highPickup = dateMs(2024, 5, 1);  // June
-const highDropoff = dateMs(2024, 5, 5); // June
+// High season dates (April=3 through October=9), weekdays only
+const highPickup = dateMs(2024, 5, 3);  // June 3, Monday
+const highDropoff = dateMs(2024, 5, 7); // June 7, Friday
 
-// Low season dates (November=10 through March=2)
-const lowPickup = dateMs(2024, 11, 1);  // December
-const lowDropoff = dateMs(2024, 11, 5); // December
+// Low season dates (November=10 through March=2), weekdays only
+const lowPickup = dateMs(2024, 11, 2);  // December 2, Monday
+const lowDropoff = dateMs(2024, 11, 6); // December 6, Friday
 
 describe('normalizeCarClass', () => {
   test('Compact (exact)', () => expect(normalizeCarClass('Compact')).toBe('Compact'));
@@ -58,6 +58,13 @@ describe('getSeason', () => {
   });
   test('pickup in High season, dropoff in Low = High', () => {
     expect(getSeason(dateMs(2024, 5, 1), dateMs(2024, 11, 1))).toBe('High');
+  });
+});
+
+describe('price - car type validation', () => {
+  test('invalid car type returns error', () => {
+    expect(price('A', 'B', highPickup, highDropoff, 'Truck', 30, 3))
+      .toBe('Invalid car type - must be Compact, Electric, Cabrio, or Racer');
   });
 });
 
@@ -139,19 +146,19 @@ describe('price - Racer surcharge', () => {
 describe('price - long rental discount', () => {
   test('> 10 days in Low season applies 10% discount', () => {
     // age=30, 11 days, Low season, Compact, licenseYears=5
-    const p = dateMs(2024, 11, 1);
-    const d = dateMs(2024, 11, 11);
+    const p = dateMs(2024, 11, 2);
+    const d = dateMs(2024, 11, 12);
     const result = price('A', 'B', p, d, 'Compact', 30, 5);
-    // 30 * 11 * 0.9 = 297
-    expect(result).toBe('€297');
+    // 9 weekdays + 2 weekend days: 30*9 + 30*1.05*2 = 333, * 0.9 = 299.7
+    expect(result).toBe('€299.7');
   });
 
   test('> 10 days in High season: no discount', () => {
-    const p = dateMs(2024, 5, 1);
-    const d = dateMs(2024, 5, 11);
+    const p = dateMs(2024, 5, 3);
+    const d = dateMs(2024, 5, 13);
     const result = price('A', 'B', p, d, 'Compact', 30, 5);
-    // 30 * 11 * 1.15 = 379.5
-    expect(result).toBe('€379.5');  });
+    // 9 weekdays + 2 weekend days: 30*9 + 30*1.05*2 = 333, * 1.15 = 382.95
+    expect(result).toBe('€382.95');  });
 
   test('<= 10 days in Low season: no discount', () => {
     const result = price('A', 'B', lowPickup, lowDropoff, 'Compact', 30, 5);
@@ -192,5 +199,53 @@ describe('price - license surcharge', () => {
     const result = price('A', 'B', highPickup, highDropoff, 'Compact', 30, 1);
     // 30*5*1.15*1.3 + 15*5 = 224.25 + 75 = 299.25
     expect(result).toBe('€299.25');
+  });
+});
+
+describe('getWeekendDays', () => {
+  test('Mon-Fri = 0 weekend days', () => {
+    expect(getWeekendDays(dateMs(2024, 5, 3), dateMs(2024, 5, 7))).toBe(0);
+  });
+  test('Sat-Sun = 2 weekend days', () => {
+    expect(getWeekendDays(dateMs(2025, 0, 11), dateMs(2025, 0, 12))).toBe(2);
+  });
+  test('Thu-Sat = 1 weekend day', () => {
+    expect(getWeekendDays(dateMs(2025, 0, 9), dateMs(2025, 0, 11))).toBe(1);
+  });
+  test('Mon-Sun (full week) = 2 weekend days', () => {
+    expect(getWeekendDays(dateMs(2025, 0, 6), dateMs(2025, 0, 12))).toBe(2);
+  });
+  test('11 days starting Monday = 2 weekend days', () => {
+    expect(getWeekendDays(dateMs(2024, 11, 2), dateMs(2024, 11, 12))).toBe(2);
+  });
+});
+
+describe('price - weekday/weekend pricing', () => {
+  test('weekday-only rental has no weekend surcharge', () => {
+    // age=50, Mon-Wed (Jan 6-8, 2025), 3 weekdays, Low season, licenseYears=5
+    const result = price('A', 'B', dateMs(2025, 0, 6), dateMs(2025, 0, 8), 'Compact', 50, 5);
+    // 50 * 3 = 150
+    expect(result).toBe('€150');
+  });
+
+  test('mixed weekday/weekend rental applies 5% surcharge on weekend days', () => {
+    // age=50, Thu-Sat (Jan 9-11, 2025), 2 weekdays + 1 weekend, Low season, licenseYears=5
+    const result = price('A', 'B', dateMs(2025, 0, 9), dateMs(2025, 0, 11), 'Compact', 50, 5);
+    // Thu($50) + Fri($50) + Sat($52.50) = 152.50
+    expect(result).toBe('€152.5');
+  });
+
+  test('weekend-only rental applies 5% surcharge on all days', () => {
+    // age=50, Sat-Sun (Jan 11-12, 2025), 2 weekend days, Low season, licenseYears=5
+    const result = price('A', 'B', dateMs(2025, 0, 11), dateMs(2025, 0, 12), 'Compact', 50, 5);
+    // 50*1.05*2 = 105
+    expect(result).toBe('€105');
+  });
+
+  test('each rental day is evaluated individually', () => {
+    // age=40, Fri-Mon (Jan 10-13, 2025), 2 weekdays + 2 weekend days, Low season, licenseYears=5
+    const result = price('A', 'B', dateMs(2025, 0, 10), dateMs(2025, 0, 13), 'Compact', 40, 5);
+    // Fri($40) + Sat($42) + Sun($42) + Mon($40) = 164
+    expect(result).toBe('€164');
   });
 });

@@ -6,6 +6,7 @@ const HIGH_SEASON_START_MONTH = 3; // April (0-indexed)
 const HIGH_SEASON_END_MONTH = 9;   // October (0-indexed)
 const RACER_SURCHARGE = 1.5;
 const HIGH_SEASON_SURCHARGE = 1.15;
+const WEEKEND_SURCHARGE = 1.05;
 const LONG_RENTAL_DISCOUNT = 0.9;
 const LONG_RENTAL_THRESHOLD_DAYS = 10;
 const LICENSE_INELIGIBLE_YEARS = 1;
@@ -29,6 +30,10 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
   const rentalDays = getDays(pickupDate, dropoffDate);
   const season = getSeason(pickupDate, dropoffDate);
 
+  if (carClass === "Unknown") {
+    return "Invalid car type - must be Compact, Electric, Cabrio, or Racer";
+  }
+
   if (age < MIN_RENTAL_AGE) {
     return "Driver too young - cannot quote the price";
   }
@@ -41,7 +46,9 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
     return "Driver must have held a license for at least 1 year";
   }
 
-  let rentalPrice = age * rentalDays;
+  const weekendDays = getWeekendDays(pickupDate, dropoffDate);
+  const weekdays = rentalDays - weekendDays;
+  let rentalPrice = age * weekdays + age * WEEKEND_SURCHARGE * weekendDays;
 
   if (carClass === "Racer" && age <= YOUNG_RACER_AGE_LIMIT && season === "High") {
     rentalPrice *= RACER_SURCHARGE;
@@ -98,7 +105,21 @@ function getSeason(pickupDate, dropoffDate) {
   }
 }
 
+function getWeekendDays(pickupDate, dropoffDate) {
+  const oneDay = 24 * 60 * 60 * 1000;
+  let count = 0;
+  let current = new Date(pickupDate);
+  const end = new Date(dropoffDate);
+  while (current <= end) {
+    const day = current.getDay();
+    if (day === 0 || day === 6) count++;
+    current = new Date(current.getTime() + oneDay);
+  }
+  return count;
+}
+
 exports.price = price;
 exports.getDays = getDays;
 exports.getSeason = getSeason;
 exports.normalizeCarClass = normalizeCarClass;
+exports.getWeekendDays = getWeekendDays;
