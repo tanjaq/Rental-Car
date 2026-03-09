@@ -1,0 +1,210 @@
+name: PR Grade Checks
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint-clean-code:
+    name: Lint Clean Code
+    if: contains(github.event.pull_request.labels.*.name, 'grade')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint (clean code + naming)
+        id: lint
+        continue-on-error: true
+        run: npx eslint . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
+
+      - name: Comment lint result on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- grade-lint -->';
+            const ok = '${{ steps.lint.outcome }}' === 'success';
+            const body = `${marker}
+            ### Grade Check: Lint / Clean Code
+            Status: ${ok ? '✅ PASS' : '❌ FAIL'}
+            Rule set: ESLint + strict warnings + camelCase naming check.
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  tests-and-coverage:
+    name: Repository Tests + 100% Coverage
+    if: contains(github.event.pull_request.labels.*.name, 'grade')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run repository tests with coverage
+        id: repo_tests
+        continue-on-error: true
+        run: npm test -- --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+
+      - name: Enforce global 100% coverage
+        id: coverage_gate
+        continue-on-error: true
+        run: |
+          node -e "const fs=require('fs'); const p='coverage/coverage-summary.json'; if(!fs.existsSync(p)){console.error('coverage-summary.json not found'); process.exit(1);} const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const keys=['lines','statements','functions','branches']; const bad=keys.filter(k=>s[k].pct<100); if(bad.length){console.error('Coverage below 100% for:', bad.map(k=>`${k}=${s[k].pct}%`).join(', ')); process.exit(1);} console.log('Coverage OK:', keys.map(k=>`${k}=${s[k].pct}%`).join(', '));"
+
+      - name: Read coverage numbers
+        id: coverage_values
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const s=require('./coverage/coverage-summary.json').total; console.log('lines=' + s.lines.pct); console.log('statements=' + s.statements.pct); console.log('functions=' + s.functions.pct); console.log('branches=' + s.branches.pct);" >> "$GITHUB_OUTPUT"
+          else
+            echo "lines=n/a" >> "$GITHUB_OUTPUT"
+            echo "statements=n/a" >> "$GITHUB_OUTPUT"
+            echo "functions=n/a" >> "$GITHUB_OUTPUT"
+            echo "branches=n/a" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment test/coverage result on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- grade-repo-tests -->';
+            const testsOk = '${{ steps.repo_tests.outcome }}' === 'success';
+            const coverageOk = '${{ steps.coverage_gate.outcome }}' === 'success';
+            const allOk = testsOk && coverageOk;
+
+            const body = `${marker}
+            ### Grade Check: Repository Tests + Coverage
+            Status: ${allOk ? '✅ PASS' : '❌ FAIL'}
+            Tests: ${testsOk ? '✅ PASS' : '❌ FAIL'}
+            Coverage gate (100% lines/statements/functions/branches): ${coverageOk ? '✅ PASS' : '❌ FAIL'}
+            Coverage values: lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+  teacher-tests:
+    name: Required Tests
+    if: contains(github.event.pull_request.labels.*.name, 'grade')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout required tests
+        uses: actions/checkout@v4
+        with:
+          ref: teacher-tests
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run required tests
+        id: teacher
+        continue-on-error: true
+        run: npm test -- --runInBand
+
+      - name: Comment teacher-tests result on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- grade-teacher-tests -->';
+            const ok = '${{ steps.teacher.outcome }}' === 'success';
+            const body = `${marker}
+            ### Grade Check: Required Tests
+            These are the expected tests for grading.
+            Status: ${ok ? '✅ PASS' : '❌ FAIL'}
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
