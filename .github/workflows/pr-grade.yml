@@ -13,28 +13,28 @@ jobs:
     name: Lint Clean Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
+      - name: Checkout PR branch (grade submitted code)
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Setup Node
+      - name: Setup Node (use consistent runtime)
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (prepare tooling)
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint (clean code + naming)
+      - name: Run ESLint (check style, naming, clean code)
         id: lint
         continue-on-error: true
         run: npx eslint . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
 
-      - name: Comment lint result on PR
+      - name: Comment lint result on PR (post pass/fail summary)
         if: always()
         uses: actions/github-script@v7
         with:
@@ -45,11 +45,11 @@ jobs:
             const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
             const body = `${marker}
             ### Grade Check: Lint / Clean Code
-            Status: ${ok ? '✅ PASS' : '❌ FAIL'}
-            Rule set: ESLint + strict warnings + camelCase naming check.
+            **Purpose:** Verify naming conventions and clean-code style rules with ESLint.
+            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
             ${ok ? '' : 'Where to look: open the workflow run and inspect the `Run ESLint` step log.'}
-            Run details: ${runUrl}
-            PR checks: ${checksUrl}
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
@@ -72,7 +72,7 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set lint job status
+      - name: Set lint job status (reflect check outcome)
         if: always()
         run: |
           if [ "${{ steps.lint.outcome }}" != "success" ]; then
@@ -84,23 +84,23 @@ jobs:
     name: Test Coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
+      - name: Checkout PR branch (grade submitted code)
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Setup Node
+      - name: Setup Node (use consistent runtime)
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (prepare test environment)
         run: npm ci --legacy-peer-deps
 
-      - name: Run repository tests with coverage
+      - name: Run repository tests with coverage (execute full suite)
         id: repo_tests
         continue-on-error: true
         run: |
@@ -110,7 +110,7 @@ jobs:
             npx jest --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
           fi
 
-      - name: Enforce global 100% coverage
+      - name: Enforce global 100% coverage (apply grading threshold)
         id: coverage_gate
         continue-on-error: true
         run: |
@@ -134,7 +134,7 @@ jobs:
           console.log('Coverage OK:', keys.map((k) => `${k}=${s[k].pct}%`).join(', '));
           NODE
 
-      - name: Read coverage numbers
+      - name: Read coverage numbers (collect metrics for comment)
         id: coverage_values
         if: always()
         run: |
@@ -147,7 +147,7 @@ jobs:
             echo "branches=n/a" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Comment test/coverage result on PR
+      - name: Comment test/coverage result on PR (post pass/fail summary)
         if: always()
         uses: actions/github-script@v7
         with:
@@ -161,13 +161,13 @@ jobs:
 
             const body = `${marker}
             ### Grade Check: Test Coverage
-            Status: ${allOk ? '✅ PASS' : '❌ FAIL'}
-            Tests: ${testsOk ? '✅ PASS' : '❌ FAIL'}
-            Coverage gate (100% lines/statements/functions/branches): ${coverageOk ? '✅ PASS' : '❌ FAIL'}
-            Coverage values: lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
+            **Purpose:** Run project tests and check 100% test coverage.
+            **Status:** ${allOk ? '✅ PASS' : '❌ FAIL'}
+            **Tests:** ${testsOk ? '✅ PASS' : '❌ FAIL'}
+            **Coverage values:** lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
             ${allOk ? '' : 'Where to look: inspect `Run repository tests with coverage` and `Enforce global 100% coverage` step logs in this run.'}
-            Run details: ${runUrl}
-            PR checks: ${checksUrl}
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
@@ -190,7 +190,7 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set tests/coverage job status
+      - name: Set tests/coverage job status (reflect check outcome)
         if: always()
         run: |
           if [ "${{ steps.repo_tests.outcome }}" != "success" ] || [ "${{ steps.coverage_gate.outcome }}" != "success" ]; then
@@ -202,22 +202,22 @@ jobs:
     name: Functional Requirements Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout functional requirements tests
+      - name: Checkout functional requirements tests (load expected behaviors)
         uses: actions/checkout@v4
         with:
           ref: teacher-tests
           persist-credentials: false
 
-      - name: Setup Node
+      - name: Setup Node (use consistent runtime)
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (prepare test environment)
         run: npm ci --legacy-peer-deps
 
-      - name: Run functional requirements tests
+      - name: Run functional requirements tests (validate expected behavior)
         id: teacher
         continue-on-error: true
         run: |
@@ -227,7 +227,7 @@ jobs:
             npx jest --runInBand
           fi
 
-      - name: Comment functional requirements result on PR
+      - name: Comment functional requirements result on PR (post pass/fail summary)
         if: always()
         uses: actions/github-script@v7
         with:
@@ -238,11 +238,11 @@ jobs:
             const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
             const body = `${marker}
             ### Grade Check: Functional Requirements Test
-            These tests validate functional requirements for grading.
-            Status: ${ok ? '✅ PASS' : '❌ FAIL'}
+            **Purpose:** Validate expected functional requirements.
+            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
             ${ok ? '' : 'Where to look: inspect the `Run functional requirements tests` step log in this run.'}
-            Run details: ${runUrl}
-            PR checks: ${checksUrl}
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
@@ -265,7 +265,7 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set functional requirements status
+      - name: Set functional requirements status (reflect check outcome)
         if: always()
         run: |
           if [ "${{ steps.teacher.outcome }}" != "success" ]; then
