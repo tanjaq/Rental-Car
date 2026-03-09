@@ -39,7 +39,7 @@ function getClazz(type) {
       case "Racer":
           return "Racer";
       default:
-          return "Unknown";
+          return "UUU";
   }
 }
 
