@@ -56,17 +56,25 @@ jobs:
               issue_number,
               per_page: 100
             });
-            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
-            if (botComment) {
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
               await github.rest.issues.updateComment({
                 owner,
                 repo,
-                comment_id: botComment.id,
+                comment_id: existing.id,
                 body
               });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
+
+      - name: Set lint job status
+        if: always()
+        run: |
+          if [ "${{ steps.lint.outcome }}" != "success" ]; then
+            echo "Lint check failed."
+            exit 1
+          fi
 
   tests-and-coverage:
     name: Repository Tests + 100% Coverage
@@ -147,7 +155,7 @@ jobs:
             const allOk = testsOk && coverageOk;
 
             const body = `${marker}
-            ### Grade Check: Repository Tests + Coverage
+            ### Grade Check: Test Coverage
             Status: ${allOk ? '✅ PASS' : '❌ FAIL'}
             Tests: ${testsOk ? '✅ PASS' : '❌ FAIL'}
             Coverage gate (100% lines/statements/functions/branches): ${coverageOk ? '✅ PASS' : '❌ FAIL'}
@@ -162,24 +170,32 @@ jobs:
               issue_number,
               per_page: 100
             });
-            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
-            if (botComment) {
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
               await github.rest.issues.updateComment({
                 owner,
                 repo,
-                comment_id: botComment.id,
+                comment_id: existing.id,
                 body
               });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
+      - name: Set tests/coverage job status
+        if: always()
+        run: |
+          if [ "${{ steps.repo_tests.outcome }}" != "success" ] || [ "${{ steps.coverage_gate.outcome }}" != "success" ]; then
+            echo "Repository tests and/or coverage check failed."
+            exit 1
+          fi
+
   teacher-tests:
-    name: Required Tests
+    name: Functional Requirements Test
     if: contains(github.event.pull_request.labels.*.name, 'grade')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout required tests
+      - name: Checkout functional requirements tests
         uses: actions/checkout@v4
         with:
           ref: teacher-tests
@@ -194,7 +210,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run required tests
+      - name: Run functional requirements tests
         id: teacher
         continue-on-error: true
         run: |
@@ -204,7 +220,7 @@ jobs:
             npx jest --runInBand
           fi
 
-      - name: Comment teacher-tests result on PR
+      - name: Comment functional requirements result on PR
         if: always()
         uses: actions/github-script@v7
         with:
@@ -212,8 +228,8 @@ jobs:
             const marker = '<!-- grade-teacher-tests -->';
             const ok = '${{ steps.teacher.outcome }}' === 'success';
             const body = `${marker}
-            ### Grade Check: Required Tests
-            These are the expected tests for grading.
+            ### Grade Check: Functional Requirements Test
+            These tests validate functional requirements for grading.
             Status: ${ok ? '✅ PASS' : '❌ FAIL'}
             `;
 
@@ -225,14 +241,22 @@ jobs:
               issue_number,
               per_page: 100
             });
-            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
-            if (botComment) {
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
               await github.rest.issues.updateComment({
                 owner,
                 repo,
-                comment_id: botComment.id,
+                comment_id: existing.id,
                 body
               });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
+
+      - name: Set functional requirements status
+        if: always()
+        run: |
+          if [ "${{ steps.teacher.outcome }}" != "success" ]; then
+            echo "Functional requirements tests failed."
+            exit 1
+          fi
