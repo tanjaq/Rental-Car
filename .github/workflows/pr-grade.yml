@@ -221,7 +221,7 @@ jobs:
       - name: Load functional requirement tests (from teacher-tests branch)
         run: |
           git fetch --depth=1 origin teacher-tests
-          mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | rg '\.test\.js$' || true)
+          mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | grep -E '\.test\.js$' || true)
           if [ "${#test_files[@]}" -eq 0 ]; then
             echo "No functional test files found in teacher-tests."
             exit 1
