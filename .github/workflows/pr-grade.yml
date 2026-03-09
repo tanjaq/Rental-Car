@@ -93,7 +93,7 @@ jobs:
         id: repo_tests
         continue-on-error: true
         run: |
-          if npm pkg get scripts.test | grep -qv null; then
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
             npm test -- --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
           else
             npx jest --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
@@ -103,7 +103,25 @@ jobs:
         id: coverage_gate
         continue-on-error: true
         run: |
-          node -e "const fs=require('fs'); const p='coverage/coverage-summary.json'; if(!fs.existsSync(p)){console.error('coverage-summary.json not found'); process.exit(1);} const s=JSON.parse(fs.readFileSync(p,'utf8')).total; const keys=['lines','statements','functions','branches']; const bad=keys.filter(k=>s[k].pct<100); if(bad.length){console.error('Coverage below 100% for:', bad.map(k=>`${k}=${s[k].pct}%`).join(', ')); process.exit(1);} console.log('Coverage OK:', keys.map(k=>`${k}=${s[k].pct}%`).join(', '));"
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'coverage/coverage-summary.json';
+          if (!fs.existsSync(p)) {
+            console.error('coverage-summary.json not found');
+            process.exit(1);
+          }
+          const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
+          const keys = ['lines', 'statements', 'functions', 'branches'];
+          const bad = keys.filter((k) => s[k].pct < 100);
+          if (bad.length) {
+            console.error(
+              'Coverage below 100% for:',
+              bad.map((k) => `${k}=${s[k].pct}%`).join(', ')
+            );
+            process.exit(1);
+          }
+          console.log('Coverage OK:', keys.map((k) => `${k}=${s[k].pct}%`).join(', '));
+          NODE
 
       - name: Read coverage numbers
         id: coverage_values
@@ -180,7 +198,7 @@ jobs:
         id: teacher
         continue-on-error: true
         run: |
-          if npm pkg get scripts.test | grep -qv null; then
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
             npm test -- --runInBand
           else
             npx jest --runInBand
