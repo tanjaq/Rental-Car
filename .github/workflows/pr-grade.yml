@@ -11,7 +11,6 @@ permissions:
 jobs:
   lint-clean-code:
     name: Lint Clean Code
-    if: contains(github.event.pull_request.labels.*.name, 'grade')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR branch
@@ -42,10 +41,15 @@ jobs:
           script: |
             const marker = '<!-- grade-lint -->';
             const ok = '${{ steps.lint.outcome }}' === 'success';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
             const body = `${marker}
             ### Grade Check: Lint / Clean Code
             Status: ${ok ? '✅ PASS' : '❌ FAIL'}
             Rule set: ESLint + strict warnings + camelCase naming check.
+            ${ok ? '' : 'Where to look: open the workflow run and inspect the `Run ESLint` step log.'}
+            Run details: ${runUrl}
+            PR checks: ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
@@ -77,8 +81,7 @@ jobs:
           fi
 
   tests-and-coverage:
-    name: Repository Tests + 100% Coverage
-    if: contains(github.event.pull_request.labels.*.name, 'grade')
+    name: Test Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR branch
@@ -153,6 +156,8 @@ jobs:
             const testsOk = '${{ steps.repo_tests.outcome }}' === 'success';
             const coverageOk = '${{ steps.coverage_gate.outcome }}' === 'success';
             const allOk = testsOk && coverageOk;
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
 
             const body = `${marker}
             ### Grade Check: Test Coverage
@@ -160,6 +165,9 @@ jobs:
             Tests: ${testsOk ? '✅ PASS' : '❌ FAIL'}
             Coverage gate (100% lines/statements/functions/branches): ${coverageOk ? '✅ PASS' : '❌ FAIL'}
             Coverage values: lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
+            ${allOk ? '' : 'Where to look: inspect `Run repository tests with coverage` and `Enforce global 100% coverage` step logs in this run.'}
+            Run details: ${runUrl}
+            PR checks: ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
@@ -192,7 +200,6 @@ jobs:
 
   teacher-tests:
     name: Functional Requirements Test
-    if: contains(github.event.pull_request.labels.*.name, 'grade')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout functional requirements tests
@@ -227,10 +234,15 @@ jobs:
           script: |
             const marker = '<!-- grade-teacher-tests -->';
             const ok = '${{ steps.teacher.outcome }}' === 'success';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
             const body = `${marker}
             ### Grade Check: Functional Requirements Test
             These tests validate functional requirements for grading.
             Status: ${ok ? '✅ PASS' : '❌ FAIL'}
+            ${ok ? '' : 'Where to look: inspect the `Run functional requirements tests` step log in this run.'}
+            Run details: ${runUrl}
+            PR checks: ${checksUrl}
             `;
 
             const issue_number = context.payload.pull_request.number;
