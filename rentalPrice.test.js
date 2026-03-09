@@ -23,7 +23,7 @@ describe('Rental price calculator', () => {
     });
 
     test('racer surcharge: age 25 or less in high season gets +50%', () => {
-      expect(price('A', 'B', '2024-06-10', '2024-06-10', 'Racer', 25)).toBe('$43.125');
+      expect(price('A', 'B', '2024-06-10', '2024-06-10', 'Racer', 25)).toBe('$43.13');
     });
 
     test('racer surcharge does not apply in low season', () => {
