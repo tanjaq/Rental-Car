@@ -32,7 +32,7 @@ jobs:
       - name: Run ESLint (check style, naming, clean code)
         id: lint
         continue-on-error: true
-        run: npx eslint . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
+        run: npx --yes eslint@8 . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
 
       - name: Comment lint result on PR (post pass/fail summary)
         if: always()
@@ -218,12 +218,12 @@ jobs:
       - name: Install dependencies (prepare test environment)
         run: npm ci --legacy-peer-deps
 
-      - name: Load functional requirement tests (from teacher-tests branch)
+      - name: Load functional requirement tests
         run: |
-          git fetch --depth=1 origin teacher-tests
+          git fetch --depth=1 "https://github.com/${{ github.repository }}.git" teacher-tests
           mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | grep -E '\.test\.js$' || true)
           if [ "${#test_files[@]}" -eq 0 ]; then
-            echo "No functional test files found in teacher-tests."
+            echo "No functional test files found."
             exit 1
           fi
           for file in "${test_files[@]}"; do
