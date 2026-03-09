@@ -202,10 +202,11 @@ jobs:
     name: Functional Requirements Test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout functional requirements tests (load expected behaviors)
+      - name: Checkout PR branch (submitted code)
         uses: actions/checkout@v4
         with:
-          ref: teacher-tests
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
       - name: Setup Node (use consistent runtime)
@@ -216,6 +217,19 @@ jobs:
 
       - name: Install dependencies (prepare test environment)
         run: npm ci --legacy-peer-deps
+
+      - name: Load functional requirement tests (from teacher-tests branch)
+        run: |
+          git fetch --depth=1 origin teacher-tests
+          mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | rg '\.test\.js$' || true)
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "No functional test files found in teacher-tests."
+            exit 1
+          fi
+          for file in "${test_files[@]}"; do
+            mkdir -p "$(dirname "$file")"
+            git show "FETCH_HEAD:$file" > "$file"
+          done
 
       - name: Run functional requirements tests (validate expected behavior)
         id: teacher
