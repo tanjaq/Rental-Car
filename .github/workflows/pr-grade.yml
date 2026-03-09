@@ -92,7 +92,12 @@ jobs:
       - name: Run repository tests with coverage
         id: repo_tests
         continue-on-error: true
-        run: npm test -- --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+        run: |
+          if npm pkg get scripts.test | grep -qv null; then
+            npm test -- --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+          else
+            npx jest --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+          fi
 
       - name: Enforce global 100% coverage
         id: coverage_gate
@@ -174,7 +179,12 @@ jobs:
       - name: Run required tests
         id: teacher
         continue-on-error: true
-        run: npm test -- --runInBand
+        run: |
+          if npm pkg get scripts.test | grep -qv null; then
+            npm test -- --runInBand
+          else
+            npx jest --runInBand
+          fi
 
       - name: Comment teacher-tests result on PR
         if: always()
