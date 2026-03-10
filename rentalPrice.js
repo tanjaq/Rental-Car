@@ -11,7 +11,7 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
     const licenseLessThan1Year = 1;
     const licenseLessThan2Years = 2;
     const licenseLessThan3Years = 3;
-    
+
     const newLicencePriceIncrease = 0.3;
     const highSeasonDailySubcharge = 15;
 
@@ -22,7 +22,7 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
         return "Driver too young - cannot quote the price";
     }
 
-    if (driverAge <= compactRentalAge && carType !== "Compact") {
+    if (driverAge < compactRentalAge && carType !== "Compact") {
         return "Drivers 21 y/o or less can only rent Compact vehicles";
     }
 
@@ -52,7 +52,7 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
         rentalPrice *= lowSeasonDiscount;
     }
 
-    return '$' + rentalPrice;
+    return '$' + rentalPrice.toFixed(2);
 }
 
 function getRentalDuration(pickupDate, dropoffDate) {
