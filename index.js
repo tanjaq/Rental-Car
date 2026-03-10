@@ -17,14 +17,11 @@ const resultHtml = fs.readFileSync('result.html', 'utf8');
 app.post('/', (req, res) => {
     const post = req.body;
     const result = rental.price(
-        // needs functionality
-        String(post.pickupLocation),
-        String(post.dropoffLocation),
-
         Date.parse(post.pickupDate),
         Date.parse(post.dropoffDate),
         String(post.carType),
-        Number(post.driverAge)
+        Number(post.driverAge),
+        Number(post.licensDuration)
     );
     res.send(formHtml + resultHtml.replaceAll('$0', result));
 });
