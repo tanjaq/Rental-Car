@@ -64,3 +64,29 @@ test("Treats rentals spanning before and after high season as high season", () =
     const result = rentalPrice.price("2026-02-01", "2026-11-01", "Compact", 21, 3);
     expect(result).toBe("$6617.10");
 });
+
+// Weekday/Weekend Pricing
+test("Applies regular pricing for only weekday rentals", () => {
+    const result = rentalPrice.price("2026-03-09", "2026-03-13", "Compact", 50, 3);
+    expect(result).toBe("$250.00");
+});
+
+test("Applies 5% price increase for only weekday rentals", () => {
+    const result = rentalPrice.price("2026-03-14", "2026-03-15", "Compact", 50, 3);
+    expect(result).toBe("$105.00");
+});
+
+test("Week-long rental with weekdays and weekends", () => {
+    const result = rentalPrice.price("2026-03-09", "2026-03-15", "Compact", 50, 3);
+    expect(result).toBe("$355.00");
+});
+
+test("2 Week-long rental with weekdays and weekends", () => {
+    const result = rentalPrice.price("2026-03-09", "2026-03-22", "Compact", 50, 3);
+    expect(result).toBe("$710.00");
+});
+
+test("Weekend surcharge applies independently with license surcharge", () => {
+    const result = rental.price("2026-03-13", "2026-03-14", "compact", 50, 1.5);
+    expect(result).toBe("$68.25");
+});
