@@ -12,7 +12,15 @@
         "fs": "^0.0.1-security",
         "jest": "^30.2.0"
     },
+    "scripts": {
+        "test": "jest"
+    },
     "keywords": [],
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "devDependencies": {
+        "eslint": "^8.57.1",
+        "eslint-config-airbnb-base": "^15.0.0",
+        "eslint-plugin-import": "^2.32.0"
+    }
 }

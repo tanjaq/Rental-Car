@@ -1,0 +1,288 @@
+name: PR Checks
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint-clean-code:
+    name: Lint Clean Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch (submitted code)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node (use consistent runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (prepare tooling)
+        run: npm ci --legacy-peer-deps
+
+      - name: Run ESLint (check style, naming, clean code)
+        id: lint
+        continue-on-error: true
+        run: npx --yes eslint@8 . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
+
+      - name: Comment lint result on PR (post pass/fail summary)
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- lint-check -->';
+            const ok = '${{ steps.lint.outcome }}' === 'success';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
+            const body = `${marker}
+            ### Lint / Clean Code
+            **Purpose:** Verify naming conventions and clean-code style rules with ESLint.
+            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
+            ${ok ? '' : '**Where to look:** Open the workflow run and inspect the `Run ESLint` step log.'}
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Set lint job status (reflect check outcome)
+        if: always()
+        run: |
+          if [ "${{ steps.lint.outcome }}" != "success" ]; then
+            echo "Lint check failed."
+            exit 1
+          fi
+
+  tests-and-coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch (submitted code)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node (use consistent runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (prepare test environment)
+        run: npm ci --legacy-peer-deps
+
+      - name: Run repository tests with coverage (execute full suite)
+        id: repo_tests
+        continue-on-error: true
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
+            npm test -- --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+          else
+            npx jest --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
+          fi
+
+      - name: Enforce global 100% coverage (apply grading threshold)
+        id: coverage_gate
+        continue-on-error: true
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'coverage/coverage-summary.json';
+          if (!fs.existsSync(p)) {
+            console.error('coverage-summary.json not found');
+            process.exit(1);
+          }
+          const s = JSON.parse(fs.readFileSync(p, 'utf8')).total;
+          const keys = ['lines', 'statements', 'functions', 'branches'];
+          const bad = keys.filter((k) => s[k].pct < 100);
+          if (bad.length) {
+            console.error(
+              'Coverage below 100% for:',
+              bad.map((k) => `${k}=${s[k].pct}%`).join(', ')
+            );
+            process.exit(1);
+          }
+          console.log('Coverage OK:', keys.map((k) => `${k}=${s[k].pct}%`).join(', '));
+          NODE
+
+      - name: Read coverage numbers (collect metrics for comment)
+        id: coverage_values
+        if: always()
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            node -e "const s=require('./coverage/coverage-summary.json').total; console.log('lines=' + s.lines.pct); console.log('statements=' + s.statements.pct); console.log('functions=' + s.functions.pct); console.log('branches=' + s.branches.pct);" >> "$GITHUB_OUTPUT"
+          else
+            echo "lines=n/a" >> "$GITHUB_OUTPUT"
+            echo "statements=n/a" >> "$GITHUB_OUTPUT"
+            echo "functions=n/a" >> "$GITHUB_OUTPUT"
+            echo "branches=n/a" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment test/coverage result on PR (post pass/fail summary)
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- test-coverage-check -->';
+            const testsOk = '${{ steps.repo_tests.outcome }}' === 'success';
+            const coverageOk = '${{ steps.coverage_gate.outcome }}' === 'success';
+            const allOk = testsOk && coverageOk;
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
+
+            const body = `${marker}
+            ### Test Coverage
+            **Purpose:** Run project tests and check 100% test coverage.
+            **Status:** ${allOk ? '✅ PASS' : '❌ FAIL'}
+            **Tests:** ${testsOk ? '✅ PASS' : '❌ FAIL'}
+            **Coverage values:** lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
+            ${allOk ? '' : '**Where to look:** Inspect `Run repository tests with coverage` and `Enforce global 100% coverage` step logs in this run.'}
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Set tests/coverage job status (reflect check outcome)
+        if: always()
+        run: |
+          if [ "${{ steps.repo_tests.outcome }}" != "success" ] || [ "${{ steps.coverage_gate.outcome }}" != "success" ]; then
+            echo "Repository tests and/or coverage check failed."
+            exit 1
+          fi
+
+  teacher-tests:
+    name: Functional Requirements Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch (submitted code)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Setup Node (use consistent runtime)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (prepare test environment)
+        run: npm ci --legacy-peer-deps
+
+      - name: Load functional requirement tests
+        run: |
+          git fetch --depth=1 "https://github.com/${{ github.repository }}.git" teacher-tests
+          mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | grep -E '\.test\.js$' || true)
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "No functional test files found."
+            exit 1
+          fi
+          for file in "${test_files[@]}"; do
+            mkdir -p "$(dirname "$file")"
+            git show "FETCH_HEAD:$file" > "$file"
+          done
+
+      - name: Run functional requirements tests (validate expected behavior)
+        id: teacher
+        continue-on-error: true
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
+            npm test -- --runInBand
+          else
+            npx jest --runInBand
+          fi
+
+      - name: Comment functional requirements result on PR (post pass/fail summary)
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- functional-requirements-check -->';
+            const ok = '${{ steps.teacher.outcome }}' === 'success';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
+            const body = `${marker}
+            ### Functional Requirements Test
+            **Purpose:** Validate expected functional requirements.
+            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
+            **Run details:** ${runUrl}
+            **PR checks:** ${checksUrl}
+            ${ok ? '' : '**Where to look:** Inspect the `Run functional requirements tests` step log in this run.'}
+            `;
+
+            const issue_number = context.payload.pull_request.number;
+            const { owner, repo } = context.repo;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100
+            });
+            const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Set functional requirements status (reflect check outcome)
+        if: always()
+        run: |
+          if [ "${{ steps.teacher.outcome }}" != "success" ]; then
+            echo "Functional requirements tests failed."
+            exit 1
+          fi
