@@ -22,8 +22,10 @@ app.post('/', (req, res) => {
         Date.parse(post.pickupdate),
         Date.parse(post.dropoffdate),
         String(post.type),
-        Number(post.age)
+        Number(post.age),
+        Number(post.licenseYearsHeld)
     );
+
     res.send(formHtml + resultHtml.replaceAll('$0', result));
 });
 
