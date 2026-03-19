@@ -22,10 +22,7 @@ const HIGH_SEASON_DAILY_LICENSE_SURCHARGE = 15;
 
 const TOO_YOUNG_MESSAGE = "Driver too young - cannot quote the price";
 const COMPACT_ONLY_MESSAGE = "Drivers 21 y/o or less can only rent Compact vehicles";
-const SHORT_LICENSE_MESSAGE = [
-  "Drivers with less than 1 year of driving experience",
-  "cannot rent a car"
-].join(" ");
+const SHORT_LICENSE_MESSAGE = "Driver license held for less than a year - cannot rent";
 
 const CAR_CLASS_BY_TYPE = {
   compact: "Compact",
@@ -105,14 +102,7 @@ function validateEligibility(age, carClass, licenseYearsHeld) {
   return null;
 }
 
-function getDailyPrice(age, season, licenseYearsHeld) {
-  if (
-    season === HIGH_SEASON
-    && licenseYearsHeld < HIGH_SEASON_LICENSE_THRESHOLD
-  ) {
-    return age + HIGH_SEASON_DAILY_LICENSE_SURCHARGE;
-  }
-
+function getDailyPrice(age) {
   return age;
 }
 
@@ -172,8 +162,23 @@ function applyPriceRules(basePrice, rentalDetails) {
   return totalPrice;
 }
 
+function getHighSeasonLicenseSurchargeTotal(
+  rentalDays,
+  season,
+  licenseYearsHeld
+) {
+  if (
+    season === HIGH_SEASON
+    && licenseYearsHeld < HIGH_SEASON_LICENSE_THRESHOLD
+  ) {
+    return rentalDays * HIGH_SEASON_DAILY_LICENSE_SURCHARGE;
+  }
+
+  return 0;
+}
+
 function formatPrice(priceValue) {
-  return Number(priceValue.toFixed(2));
+  return Math.round((priceValue + Number.EPSILON) * 100) / 100;
 }
 
 function price(
@@ -201,23 +206,25 @@ function price(
     return eligibilityError;
   }
 
-  const dailyPrice = getDailyPrice(
-    age,
-    season,
-    normalizedLicenseYearsHeld
-  );
+  const dailyPrice = getDailyPrice(age);
   const baseRentalPrice = getBaseRentalPrice(
     dailyPrice,
     pickupDate,
     dropoffDate
   );
-  const totalPrice = applyPriceRules(baseRentalPrice, {
+  const ruleAdjustedPrice = applyPriceRules(baseRentalPrice, {
     carClass,
     age,
     season,
     rentalDays,
     licenseYearsHeld: normalizedLicenseYearsHeld
   });
+  const highSeasonLicenseSurcharge = getHighSeasonLicenseSurchargeTotal(
+    rentalDays,
+    season,
+    normalizedLicenseYearsHeld
+  );
+  const totalPrice = ruleAdjustedPrice + highSeasonLicenseSurcharge;
 
   return `$${formatPrice(totalPrice)}`;
 }

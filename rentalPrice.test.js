@@ -47,7 +47,7 @@ describe("rental price calculator", () => {
         age: 25,
         licenseYearsHeld: 0.9
       })
-    ).toBe("Drivers with less than 1 year of driving experience cannot rent a car");
+    ).toBe("Driver license held for less than a year - cannot rent");
   });
 
   test("drivers aged 18-21 can only rent compact cars", () => {
@@ -148,7 +148,7 @@ describe("rental price calculator", () => {
           age: 30,
           licenseYearsHeld: 2.5
         })
-      ).toBe("$106.09");
+      ).toBe("$100.73");
     }
   );
 
@@ -161,7 +161,7 @@ describe("rental price calculator", () => {
         age: 30,
         licenseYearsHeld: 1.5
       })
-    ).toBe("$137.91");
+    ).toBe("$121.94");
   });
 
   test("keeps the old API working when license years are omitted", () => {
