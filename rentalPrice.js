@@ -14,9 +14,11 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
 
     const newLicencePriceIncrease = 0.3;
     const highSeasonDailySubcharge = 15;
+    const weekendDailySurchargeRate = 0.05;
 
     const rentalDuration = getRentalDuration(pickupDate, dropoffDate);
     const season = getSeason(pickupDate, dropoffDate);
+    const weekendDays = getWeekendDaysCount(pickupDate, dropoffDate);
 
     if (driverAge < legalDriverAge) {
         return "Driver too young - cannot quote the price";
@@ -31,6 +33,7 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
     }
 
     let rentalPrice = driverAge * rentalDuration;
+    rentalPrice += driverAge * weekendDailySurchargeRate * weekendDays;
 
     if (carType === "Racer" && driverAge <= racerRentalAge && season === "High") {
         rentalPrice *= highSeasonMultiplierRACER;
@@ -53,6 +56,20 @@ function price(pickupDate, dropoffDate, carType, driverAge, licenseDuration) {
     }
 
     return '$' + rentalPrice.toFixed(2);
+}
+
+function getWeekendDaysCount(pickupDate, dropoffDate) {
+    let currentDate = new Date(pickupDate);
+    const endDate = new Date(dropoffDate);
+    let count = 0;
+
+    while (currentDate <= endDate) {
+        const day = currentDate.getDay();
+        if (day === 0 || day === 6) count++;
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return count;
 }
 
 function getRentalDuration(pickupDate, dropoffDate) {

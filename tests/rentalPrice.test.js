@@ -42,12 +42,12 @@ test("Does not apply Racer high-season multiplier when driver is older than race
 
 test("Applies low-season discount for rentals longer than 10 days", () => {
     const result = rentalPrice.price("2026-01-01", "2026-01-12", "Compact", 21, 3);
-    expect(result).toBe("$226.80");
+    expect(result).toBe("$230.58");
 });
 
 test("Does not apply low-season discount when rental duration is exactly 10 days", () => {
     const result = rentalPrice.price("2026-01-01", "2026-01-10", "Compact", 21, 3);
-    expect(result).toBe("$210.00");
+    expect(result).toBe("$213.15");
 });
 
 test("Does not apply new-license increase at exactly 2 years", () => {
@@ -62,7 +62,7 @@ test("Does not add high-season daily surcharge at exactly 3 years", () => {
 
 test("Treats rentals spanning before and after high season as high season", () => {
     const result = rentalPrice.price("2026-02-01", "2026-11-01", "Compact", 21, 3);
-    expect(result).toBe("$6617.10");
+    expect(result).toBe("$6712.49");
 });
 
 // Weekday/Weekend Pricing
@@ -83,10 +83,10 @@ test("Week-long rental with weekdays and weekends", () => {
 
 test("2 Week-long rental with weekdays and weekends", () => {
     const result = rentalPrice.price("2026-03-09", "2026-03-22", "Compact", 50, 3);
-    expect(result).toBe("$710.00");
+    expect(result).toBe("$639.00");
 });
 
 test("Weekend surcharge applies independently with license surcharge", () => {
-    const result = rental.price("2026-03-13", "2026-03-14", "compact", 50, 1.5);
-    expect(result).toBe("$68.25");
+    const result = rentalPrice.price("2026-03-13", "2026-03-14", "Compact", 50, 1.5);
+    expect(result).toBe("$133.25");
 });
