@@ -23,6 +23,7 @@ const LICENSE_YEARS_SURCHARGE_THRESHOLD = 2;
 const LICENSE_YEARS_HIGH_SEASON_FEE_THRESHOLD = 3;
 const LICENSE_YEARS_SURCHARGE = 0.3;
 const LICENSE_HIGH_SEASON_DAILY_FEE = 15;
+const WEEKEND_PRICE_INCREASE = 0.05;
 
 const APRIL = 3;
 const OCTOBER = 9;
@@ -45,7 +46,7 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
   }
 
   const minimumDailyPrice = age;
-  let totalPrice = minimumDailyPrice * days;
+  let totalPrice = getBaseRentalPrice(pickupDate, dropoffDate, minimumDailyPrice);
 
   if (carClass === CAR_CLASSES.RACER && age <= RACER_SURCHARGE_MAX_AGE && season === SEASONS.HIGH) {
     totalPrice *= 1 + RACER_YOUNG_DRIVER_SURCHARGE;
@@ -73,6 +74,19 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
   }
 
   return "$" + totalPrice.toFixed(2);
+}
+
+function getBaseRentalPrice(pickupDate, dropoffDate, dailyPrice) {
+  let totalPrice = 0;
+  const current = new Date(pickupDate);
+  const end = new Date(dropoffDate);
+
+  while (current <= end) {
+    totalPrice += isWeekend(current) ? dailyPrice * (1 + WEEKEND_PRICE_INCREASE) : dailyPrice;
+    current.setDate(current.getDate() + 1);
+  }
+
+  return totalPrice;
 }
 
 function normalizeCarClass(type) {
@@ -120,6 +134,11 @@ function getSeason(pickupDate, dropoffDate) {
 
 function isHighSeasonMonth(monthIndex) {
   return monthIndex >= APRIL && monthIndex <= OCTOBER;
+}
+
+function isWeekend(date) {
+  const day = date.getDay();
+  return day === 0 || day === 6;
 }
 
 exports.price = price;

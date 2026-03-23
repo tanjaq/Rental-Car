@@ -91,8 +91,8 @@ describe('rental price rules', () => {
     const result = rental.price(
       'A',
       'B',
-      toTimestamp('2026-11-01T00:00:00Z'),
       toTimestamp('2026-11-02T00:00:00Z'),
+      toTimestamp('2026-11-03T00:00:00Z'),
       null,
       30,
       3
@@ -105,8 +105,8 @@ describe('rental price rules', () => {
     const result = rental.price(
       'A',
       'B',
-      toTimestamp('2026-11-01T00:00:00Z'),
-      toTimestamp('2026-11-01T00:00:00Z'),
+      toTimestamp('2026-11-03T00:00:00Z'),
+      toTimestamp('2026-11-03T00:00:00Z'),
       'Truck',
       30,
       3
@@ -127,5 +127,33 @@ describe('rental price rules', () => {
     );
 
     expect(result).toBe('$34.50');
+  });
+
+  test('weekday rental keeps regular daily price', () => {
+    const result = rental.price(
+      'A',
+      'B',
+      toTimestamp('2026-12-07T00:00:00Z'),
+      toTimestamp('2026-12-09T00:00:00Z'),
+      'Compact',
+      50,
+      3
+    );
+
+    expect(result).toBe('$150.00');
+  });
+
+  test('weekend days add a 5 percent daily increase', () => {
+    const result = rental.price(
+      'A',
+      'B',
+      toTimestamp('2026-12-10T00:00:00Z'),
+      toTimestamp('2026-12-12T00:00:00Z'),
+      'Compact',
+      50,
+      3
+    );
+
+    expect(result).toBe('$152.50');
   });
 });
