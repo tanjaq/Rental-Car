@@ -14,7 +14,7 @@ app.use('/pictures', express.static('images'));
 const formHtml = fs.readFileSync('form.html', 'utf8');
 const resultHtml = fs.readFileSync('result.html', 'utf8');
 
-app.post('/', (req, res) => {
+app.post('/result', (req, res) => {
     const post = req.body;
     const result = rental.price(
         String(post.pickup),
@@ -22,9 +22,10 @@ app.post('/', (req, res) => {
         Date.parse(post.pickupdate),
         Date.parse(post.dropoffdate),
         String(post.type),
-        Number(post.age)
+        Number(post.age),
+        Number(post.licenseYears)
     );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+    res.send(resultHtml.replaceAll('$0', result));
 });
 
 app.get('/', (req, res) => {
