@@ -1,17 +1,17 @@
 const SEASON = {
   HIGH: "High",
-  LOW: "Low",
+  LOW: "Low"
 };
 
 const VEHICLE_CLASS = {
   COMPACT: "Compact",
   ELECTRIC: "Electric",
   CABRIO: "Cabrio",
-  RACER: "Racer",
+  RACER: "Racer"
 };
 
-const HIGH_SEASON_START_MONTH = 3; // April
-const HIGH_SEASON_END_MONTH = 9;   // October
+const HIGH_SEASON_START_MONTH = 3;// April
+const HIGH_SEASON_END_MONTH = 9;// October
 const MIN_AGE = 18;
 const YOUNG_DRIVER_MAX = 21;
 const RACER_YOUNG_MAX = 25;
@@ -22,19 +22,29 @@ const WEEKEND_SURCHARGE = 0.05;
 
 /* -------------------- Normalization & Parsing -------------------- */
 function normalizeVehicleClass(vehicleType) {
-  if (!vehicleType || typeof vehicleType !== "string") return null;
+  if (!vehicleType || typeof vehicleType !== "string") {
+    return null;
+  }
+
   switch (vehicleType.trim().toLowerCase()) {
-    case "compact": return VEHICLE_CLASS.COMPACT;
-    case "electric": return VEHICLE_CLASS.ELECTRIC;
-    case "cabrio": return VEHICLE_CLASS.CABRIO;
-    case "racer": return VEHICLE_CLASS.RACER;
-    default: return null;
+  case "compact":
+    return VEHICLE_CLASS.COMPACT;
+  case "electric":
+    return VEHICLE_CLASS.ELECTRIC;
+  case "cabrio":
+    return VEHICLE_CLASS.CABRIO;
+  case "racer":
+    return VEHICLE_CLASS.RACER;
+  default:
+    return null;
   }
 }
 
 function parseDate(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) throw new Error("Invalid date");
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid date");
+  }
   return date;
 }
 
@@ -42,11 +52,14 @@ function parseDate(value) {
 function getRentalDays(pickupDate, dropoffDate) {
   const pickup = parseDate(pickupDate);
   const dropoff = parseDate(dropoffDate);
-  if (dropoff < pickup) throw new Error("Dropoff date cannot be before pickup date");
+
+  if (dropoff < pickup) {
+    throw new Error("Dropoff date cannot be before pickup date");
+  }
 
   const millisecondsPerDay = 24 * 60 * 60 * 1000;
-  // Inclusive of pickup and dropoff
-  const days = Math.floor((dropoff - pickup) / millisecondsPerDay) + 1;
+  const days = Math.floor((dropoff - pickup) / millisecondsPerDay) + 1; // inclusive
+
   return { days, pickup, dropoff };
 }
 
@@ -56,7 +69,9 @@ function countWeekendDays(startDate, endDate) {
 
   while (cursor <= endDate) {
     const day = cursor.getDay();
-    if (day === 0 || day === 6) weekendDays++;
+    if (day === 0 || day === 6) {
+      weekendDays += 1;
+    }
     cursor.setDate(cursor.getDate() + 1);
   }
 
@@ -70,9 +85,9 @@ function hasHighSeasonDay(startDate, endDate) {
   while (cursor <= endDate) {
     const month = cursor.getMonth();
     if (month >= HIGH_SEASON_START_MONTH && month <= HIGH_SEASON_END_MONTH) {
-      return true; // If **any day** falls in high season, treat whole rental as high season
+      return true; // any day in high season
     }
-    cursor.setDate(cursor.getDate() + 1); // Move day by day, not month by month
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   return false;
@@ -82,50 +97,66 @@ function getSeason(pickupDate, dropoffDate) {
   return hasHighSeasonDay(pickupDate, dropoffDate) ? SEASON.HIGH : SEASON.LOW;
 }
 
-
 /* -------------------- Driver Validation -------------------- */
 function validateDriver(age, licenseYears, vehicleClass) {
-  if (age < MIN_AGE) throw new Error("Driver too young - cannot quote the price");
-  if (age <= YOUNG_DRIVER_MAX && vehicleClass !== VEHICLE_CLASS.COMPACT)
+  if (age < MIN_AGE) {
+    throw new Error("Driver too young - cannot quote the price");
+  }
+  if (age <= YOUNG_DRIVER_MAX && vehicleClass !== VEHICLE_CLASS.COMPACT) {
     throw new Error("Drivers 21 y/o or less can only rent Compact vehicles");
-  if (licenseYears < 1) throw new Error("Driver must have a license for at least 1 year");
-  if (!vehicleClass) throw new Error("Unknown vehicle class");
+  }
+  if (licenseYears < 1) {
+    throw new Error("Driver must have a license for at least 1 year");
+  }
+  if (!vehicleClass) {
+    throw new Error("Unknown vehicle class");
+  }
 }
 
 /* -------------------- Pricing Functions -------------------- */
 function calculateDailyRate(age, licenseYears, season) {
   let rate = Math.max(age, MIN_AGE);
 
-  // Only +15 for high season rentals with license < 3y
-  if (season === SEASON.HIGH && licenseYears < EXTRA_LICENSE_LIMIT) rate += 15;
+  if (season === SEASON.HIGH && licenseYears < EXTRA_LICENSE_LIMIT) {
+    rate += 15;
+  }
 
   return rate;
 }
 
 function applySurcharges(total, days, weekendDays, licenseYears, season, age, vehicleClass) {
-  // Weekend surcharge: apply 5% of daily rate per weekend day
-  if (weekendDays > 0) total += total * (WEEKEND_SURCHARGE * (weekendDays / days));
+  let adjustedTotal = total;
 
-  // License < 2y: +30%
-  if (licenseYears < SHORT_LICENSE_LIMIT) total *= 1.3;
+  if (weekendDays > 0) {
+    adjustedTotal += adjustedTotal * (WEEKEND_SURCHARGE * (weekendDays / days));
+  }
 
-  // High season: +15%
-  if (season === SEASON.HIGH) total *= 1.15;
+  if (licenseYears < SHORT_LICENSE_LIMIT) {
+    adjustedTotal *= 1.3;
+  }
 
-  // Young Racer in high season: +50%
-  if (vehicleClass === VEHICLE_CLASS.RACER && age <= RACER_YOUNG_MAX && season === SEASON.HIGH)
-    total *= 1.5;
+  if (season === SEASON.HIGH) {
+    adjustedTotal *= 1.15;
+  }
 
-  // Long rentals > 10 days in low season: -10%
-  if (days > LONG_RENTAL_THRESHOLD && season === SEASON.LOW) total *= 0.9;
+  if (vehicleClass === VEHICLE_CLASS.RACER && age <= RACER_YOUNG_MAX && season === SEASON.HIGH) {
+    adjustedTotal *= 1.5;
+  }
 
-  return total;
+  if (days > LONG_RENTAL_THRESHOLD && season === SEASON.LOW) {
+    adjustedTotal *= 0.9;
+  }
+
+  return adjustedTotal;
 }
 
 function formatPrice(total, pickupYear, dropoffYear) {
   const formatted = total.toFixed(2);
-  if ((pickupYear >= 2026 || dropoffYear >= 2026) && formatted.endsWith(".00"))
+
+  if ((pickupYear >= 2026 || dropoffYear >= 2026) && formatted.endsWith(".00")) {
     return `$${formatted.slice(0, -3)}`;
+  }
+
   return `$${formatted}`;
 }
 
@@ -133,9 +164,11 @@ function formatPrice(total, pickupYear, dropoffYear) {
 function price(pickupDate, dropoffDate, vehicleType, age, licenseYears) {
   const driverAge = Number(age);
   const licenseDuration = Number(licenseYears);
-  if (Number.isNaN(driverAge) || Number.isNaN(licenseDuration))
+
+  if (Number.isNaN(driverAge) || Number.isNaN(licenseDuration)) {
     throw new Error("Invalid age or license duration");
-    
+  }
+
   const vehicleClass = normalizeVehicleClass(vehicleType);
   validateDriver(driverAge, licenseDuration, vehicleClass);
 
@@ -148,7 +181,9 @@ function price(pickupDate, dropoffDate, vehicleType, age, licenseYears) {
   total = applySurcharges(total, days, weekendDays, licenseDuration, season, driverAge, vehicleClass);
 
   const minimumTotal = driverAge * billableDays;
-  if (total < minimumTotal) total = minimumTotal;
+  if (total < minimumTotal) {
+    total = minimumTotal;
+  }
 
   return formatPrice(total, pickup.getFullYear(), dropoff.getFullYear());
 }
