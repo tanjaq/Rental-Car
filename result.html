@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result</title>
+    <title>Rental Results</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            padding: 0;
+            padding: 20px;
+        }
+        .results-container {
+            max-width: 800px;
+            margin: 0 auto;
         }
         .car-list {
             list-style-type: none;
             padding: 0;
-            margin: 20px;
+            margin: 20px 0;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
@@ -26,44 +31,41 @@
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .car-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
         .car-name {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             margin-bottom: 10px;
+            color: #333;
         }
         .car-price {
-            font-size: 16px;
-            color: #007bff;
+            font-size: 24px;
+            color: #28a745;
+            font-weight: bold;
+        }
+        .price-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .btn-back {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <ul class="car-list">
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Compact Car</div>
-                <div class="car-price">Price: ${{compactPrice}} per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Electric Car</div>
-                <div class="car-price">Price: ${{electricPrice}} per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Cabrio</div>
-                <div class="car-price">Price: ${{cabrioPrice}} per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Racer</div>
-                <div class="car-price">Price: ${{racerPrice}} per day</div>
-            </div>
-        </li>
-    </ul>
-</body>
-</html>
+    <div class="results-container">
+        <h1>Rental Price Results</h1>
+        <p class="text-muted">Total rental period: {{days}} days</p>
+        <ul class="car-list">
+            <li class="car-item">
+                <div class="car-details">
+                    <div class="car-name">Compact Car</div>
+                    <div class="car-price">${{compactPrice}}</div>
+                    <div class="price-label">Total rental price</div>
+                </div>
