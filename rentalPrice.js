@@ -25,8 +25,19 @@ const AGE_LIMITS = {
 };
 
 const LICENSE_LIMITS = {
+  MINIMUM_YEARS: 1,
   PRICE_INCREASE: 2,
   ADDITIONAL_FEE: 3
+};
+
+const CONDITIONAL_RATES = {
+  WEEKENDS: 1.05,
+  RACER_HIGH_SEASON: 1.5,
+  HIGH_SEASON: 1.15,
+  LONG_RENTAL_DAYS: 10,
+  LONG_RENTAL_DISCOUNT: 0.9,
+  LICENSE_INCREASE: 1.3,
+  FIXED_HIGH_SEASON_ADDITIONAL_FEE: 15
 };
 
 function calculateRentalDays(startDate, endDate) {
@@ -115,39 +126,48 @@ function validateDates(startDate, endDate) {
   return null;
 }
 
-function applyPricingRules(basePrice, context) {
+function calculateBaseWithWeekend(basePricePerDay, startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let total = 0;
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const day = d.getDay();
+    if (day === 0 || day === 6) {
+      total += basePricePerDay * CONDITIONAL_RATES.WEEKENDS;
+    } else {
+      total += basePricePerDay;
+    }
+  }
+
+  return total;
+}
+
+function applyPricingRules(context) {
   const {
-    age,
-    days,
-    carClass,
-    season,
-    licenseYears
+    age, carClass, season, licenseYears, rentalDays, startDate, endDate
   } = context;
 
-  let total = basePrice;
+  const basePricePerDay = age;
+  let total = calculateBaseWithWeekend(basePricePerDay, startDate, endDate);
 
-  if (
-    carClass === CAR_CLASS.RACER
-    && age <= AGE_LIMITS.RACER_MAX
-    && season === SEASON.HIGH
-  ) {
-    total *= 1.5;
+  if (carClass === CAR_CLASS.RACER && age <= AGE_LIMITS.RACER_MAX && season === SEASON.HIGH) {
+    total *= CONDITIONAL_RATES.RACER_HIGH_SEASON;
   }
 
   if (season === SEASON.HIGH) {
-    total *= 1.15;
+    total *= CONDITIONAL_RATES.HIGH_SEASON;
   }
 
-  if (days > 10 && season === SEASON.LOW) {
-    total *= 0.9;
+  if (rentalDays > CONDITIONAL_RATES.LONG_RENTAL_DAYS && season === SEASON.LOW) {
+    total *= CONDITIONAL_RATES.LONG_RENTAL_DISCOUNT;
   }
 
   if (licenseYears < LICENSE_LIMITS.PRICE_INCREASE) {
-    total *= 1.3;
+    total *= CONDITIONAL_RATES.LICENSE_INCREASE;
   }
-
   if (licenseYears < LICENSE_LIMITS.ADDITIONAL_FEE && season === SEASON.HIGH) {
-    total += 15 * days;
+    total += CONDITIONAL_RATES.FIXED_HIGH_SEASON_ADDITIONAL_FEE * rentalDays;
   }
 
   return total;
@@ -181,18 +201,18 @@ function price(
     return validationError;
   }
 
-  if (licenseYears < 1) {
+  if (licenseYears < LICENSE_LIMITS.MINIMUM_YEARS) {
     return "Driver license held for less than a year - cannot rent";
   }
 
-  const basePrice = driverAge * rentalDays;
-
-  const finalPrice = applyPricingRules(basePrice, {
+  const finalPrice = applyPricingRules({
     age: driverAge,
-    days: rentalDays,
     carClass,
     season,
-    licenseYears
+    licenseYears,
+    rentalDays,
+    startDate: pickupDate,
+    endDate: dropoffDate
   });
 
   return `$${Number(finalPrice.toFixed(2))}`;
