@@ -1,37 +1,46 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const rental = require('./rentalPrice');
-const fs = require('fs');
+const express = require("express");
+const bodyParser = require("body-parser");
+const path = require("path");
+const rental = require("./rentalPrice");
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static('public'));
-app.use('/pictures', express.static('images'));
+app.post("/", (req, res) => {
+  const {
+    pickup,
+    dropoff,
+    pickupdate,
+    dropoffdate,
+    type,
+    age,
+    licenseYears
+  } = req.body;
 
-const formHtml = fs.readFileSync('form.html', 'utf8');
-const resultHtml = fs.readFileSync('result.html', 'utf8');
+  const result = rental.price(
+    String(pickup),
+    String(dropoff),
+    String(pickupdate),
+    String(dropoffdate),
+    String(type),
+    Number(age),
+    Number(licenseYears)
+  );
 
-app.post('/', (req, res) => {
-    const post = req.body;
-    const result = rental.price(
-        String(post.pickup),
-        String(post.dropoff),
-        Date.parse(post.pickupdate),
-        Date.parse(post.dropoffdate),
-        String(post.type),
-        Number(post.age)
-    );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+  res.redirect(`/result.html?result=${encodeURIComponent(result)}`);
 });
 
-app.get('/', (req, res) => {
-    res.send(formHtml);
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "form.html"));
 });
 
-// Start the server
+app.get("/result.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "result.html"));
+});
+
 app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
+  // eslint-disable-next-line no-console
+  console.log(`Server listening at http://localhost:${port}`);
 });

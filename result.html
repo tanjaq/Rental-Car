@@ -3,67 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result</title>
+    <title>Rental Result</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
         }
-        .car-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
+        .result-container {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 30px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
         }
-        .car-item {
-            width: 45%;
-            background-color: #fff;
-            margin-bottom: 20px;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .car-name {
-            font-size: 18px;
+        .result-text {
+            font-size: 24px;
             font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .car-price {
-            font-size: 16px;
             color: #007bff;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <ul class="car-list">
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Compact Car</div>
-                <div class="car-price">Price: $0 per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Electric Car</div>
-                <div class="car-price">Price: $0 per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Cabrio</div>
-                <div class="car-price">Price: $0 per day</div>
-            </div>
-        </li>
-        <li class="car-item">
-            <div class="car-details">
-                <div class="car-name">Racer</div>
-                <div class="car-price">Price: $0 per day</div>
-            </div>
-        </li>
-    </ul>
+<div class="container">
+    <div class="result-container">
+        <h1>Rental Result</h1>
+        <div id="result" class="result-text">
+            Loading...
+        </div>
+        <a href="/" class="btn btn-primary mt-4">
+            Back to form
+        </a>
+    </div>
+</div>
+<script>
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get("result");
+
+    const resultElement = document.getElementById("result");
+
+    if (result) {
+        resultElement.textContent = result;
+    } else {
+        resultElement.textContent = "No result available";
+    };
+</script>
 </body>
 </html>
