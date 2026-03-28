@@ -24,7 +24,11 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
 
   dailyPrice = applyLicensePricing(dailyPrice, licenseYears, season);
 
-  const totalPrice = dailyPrice * days;
+  const totalPrice = calculateTotalPriceWithWeekend(
+  dailyPrice,
+  pickupDate,
+  dropoffDate
+);
 
   return `$${totalPrice.toFixed(2)}`;
 }
@@ -105,11 +109,36 @@ function getSeason(pickupDate, dropoffDate) {
   return isHighSeason ? HIGH_SEASON : LOW_SEASON;
 }
 
+function calculateTotalPriceWithWeekend(dailyPrice, pickupDate, dropoffDate) {
+  let total = 0;
+
+  const current = new Date(pickupDate);
+  const end = new Date(dropoffDate);
+
+  while (current <= end) {
+    const day = current.getDay(); // 0=Sunday, 6=Saturday
+
+    let priceForDay = dailyPrice;
+
+    // Weekend = Saturday (6) or Sunday (0)
+    if (day === 0 || day === 6) {
+      priceForDay *= 1.05; // +5%
+    }
+
+    total += priceForDay;
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return total;
+}
+
 module.exports = {
   price,
   getCarClass,
   getDays,
   getSeason,
   validateDriver,
-  validateLicense
+  validateLicense,
+  calculateTotalPriceWithWeekend
 };
