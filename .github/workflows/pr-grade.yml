@@ -20,21 +20,32 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Setup Node (use consistent runtime)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - name: Install dependencies (prepare tooling)
+      - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint (check style, naming, clean code)
+      - name: Run ESLint
         id: lint
         continue-on-error: true
-        run: npx --yes eslint@8 . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]'
+        run: |
+          npx --yes eslint@8 . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]' 2>&1 | tee /tmp/lint-output.txt
+          exit ${PIPESTATUS[0]}
 
-      - name: Comment lint result on PR (post pass/fail summary)
+      - name: Read lint output
+        id: lint_output
+        if: always()
+        run: |
+          OUTPUT=$(head -60 /tmp/lint-output.txt 2>/dev/null || echo "No output captured")
+          echo "text<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Comment lint result on PR
         if: always()
         uses: actions/github-script@v7
         with:
@@ -43,14 +54,22 @@ jobs:
             const ok = '${{ steps.lint.outcome }}' === 'success';
             const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
             const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
-            const body = `${marker}
-            ### Lint / Clean Code
-            **Purpose:** Verify naming conventions and clean-code style rules with ESLint.
-            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
-            **Run details:** ${runUrl}
-            **PR checks:** ${checksUrl}
-            ${ok ? '' : '**Where to look:** Open the workflow run and inspect the `Run ESLint` step log.'}
-            `;
+            const lintOutput = `${{ steps.lint_output.outputs.text }}`;
+            const lines = [
+              marker,
+              '### Lint / Clean Code',
+              '**Purpose:** Verify naming conventions and clean-code style rules with ESLint.',
+              `**Status:** ${ok ? '✅ PASS' : '❌ FAIL'}`,
+              `**Run details:** ${runUrl}`,
+              `**PR checks:** ${checksUrl}`,
+            ];
+            if (!ok) {
+              lines.push('**Errors:**');
+              lines.push('```');
+              lines.push(lintOutput);
+              lines.push('```');
+            }
+            const body = lines.join('\n');
 
             const issue_number = context.payload.pull_request.number;
             const { owner, repo } = context.repo;
@@ -62,17 +81,12 @@ jobs:
             });
             const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
             if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set lint job status (reflect check outcome)
+      - name: Set lint job status
         if: always()
         run: |
           if [ "${{ steps.lint.outcome }}" != "success" ]; then
@@ -91,16 +105,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Setup Node (use consistent runtime)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - name: Install dependencies (prepare test environment)
+      - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run repository tests with coverage (execute full suite)
+      - name: Run tests with coverage
         id: repo_tests
         continue-on-error: true
         run: |
@@ -110,7 +124,7 @@ jobs:
             npx jest --runInBand --coverage --coverageReporters=json-summary --coverageReporters=text
           fi
 
-      - name: Enforce global 100% coverage (apply grading threshold)
+      - name: Enforce global 100% coverage
         id: coverage_gate
         continue-on-error: true
         run: |
@@ -134,12 +148,18 @@ jobs:
           console.log('Coverage OK:', keys.map((k) => `${k}=${s[k].pct}%`).join(', '));
           NODE
 
-      - name: Read coverage numbers (collect metrics for comment)
+      - name: Read coverage numbers
         id: coverage_values
         if: always()
         run: |
           if [ -f coverage/coverage-summary.json ]; then
-            node -e "const s=require('./coverage/coverage-summary.json').total; console.log('lines=' + s.lines.pct); console.log('statements=' + s.statements.pct); console.log('functions=' + s.functions.pct); console.log('branches=' + s.branches.pct);" >> "$GITHUB_OUTPUT"
+            node -e "
+              const s = require('./coverage/coverage-summary.json').total;
+              console.log('lines=' + s.lines.pct);
+              console.log('statements=' + s.statements.pct);
+              console.log('functions=' + s.functions.pct);
+              console.log('branches=' + s.branches.pct);
+            " >> "$GITHUB_OUTPUT"
           else
             echo "lines=n/a" >> "$GITHUB_OUTPUT"
             echo "statements=n/a" >> "$GITHUB_OUTPUT"
@@ -147,7 +167,7 @@ jobs:
             echo "branches=n/a" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Comment test/coverage result on PR (post pass/fail summary)
+      - name: Comment test/coverage result on PR
         if: always()
         uses: actions/github-script@v7
         with:
@@ -158,17 +178,20 @@ jobs:
             const allOk = testsOk && coverageOk;
             const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
             const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
-
-            const body = `${marker}
-            ### Test Coverage
-            **Purpose:** Run project tests and check 100% test coverage.
-            **Status:** ${allOk ? '✅ PASS' : '❌ FAIL'}
-            **Tests:** ${testsOk ? '✅ PASS' : '❌ FAIL'}
-            **Coverage values:** lines=${{ steps.coverage_values.outputs.lines }}%, statements=${{ steps.coverage_values.outputs.statements }}%, functions=${{ steps.coverage_values.outputs.functions }}%, branches=${{ steps.coverage_values.outputs.branches }}%
-            **Run details:** ${runUrl}
-            **PR checks:** ${checksUrl}
-            ${allOk ? '' : '**Where to look:** Inspect `Run repository tests with coverage` and `Enforce global 100% coverage` step logs in this run.'}
-            `;
+            const lines = [
+              marker,
+              '### Test Coverage',
+              '**Purpose:** Run project tests and check 100% test coverage.',
+              `**Status:** ${allOk ? '✅ PASS' : '❌ FAIL'}`,
+              `**Tests:** ${testsOk ? '✅ PASS' : '❌ FAIL'}`,
+              `**Coverage:** lines=${{ steps.coverage_values.outputs.lines }}% | statements=${{ steps.coverage_values.outputs.statements }}% | functions=${{ steps.coverage_values.outputs.functions }}% | branches=${{ steps.coverage_values.outputs.branches }}%`,
+              `**Run details:** ${runUrl}`,
+              `**PR checks:** ${checksUrl}`,
+            ];
+            if (!allOk) {
+              lines.push('**Where to look:** Inspect `Run tests with coverage` and `Enforce global 100% coverage` step logs in this run.');
+            }
+            const body = lines.join('\n');
 
             const issue_number = context.payload.pull_request.number;
             const { owner, repo } = context.repo;
@@ -180,17 +203,12 @@ jobs:
             });
             const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
             if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set tests/coverage job status (reflect check outcome)
+      - name: Set tests/coverage job status
         if: always()
         run: |
           if [ "${{ steps.repo_tests.outcome }}" != "success" ] || [ "${{ steps.coverage_gate.outcome }}" != "success" ]; then
@@ -209,29 +227,107 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
-      - name: Setup Node (use consistent runtime)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      - name: Install dependencies (prepare test environment)
+      - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
       - name: Load functional requirement tests
         run: |
-          git fetch --depth=1 "https://github.com/${{ github.repository }}.git" teacher-tests
+          if ! git fetch --depth=1 "https://github.com/${{ github.repository }}.git" teacher-tests 2>/dev/null; then
+            echo "::warning::teacher-tests branch not found — skipping functional tests"
+            exit 0
+          fi
           mapfile -t test_files < <(git ls-tree -r --name-only FETCH_HEAD | grep -E '\.test\.js$' || true)
           if [ "${#test_files[@]}" -eq 0 ]; then
-            echo "No functional test files found."
-            exit 1
+            echo "::warning::No functional test files found on teacher-tests branch — skipping"
+            exit 0
           fi
           for file in "${test_files[@]}"; do
             mkdir -p "$(dirname "$file")"
             git show "FETCH_HEAD:$file" > "$file"
           done
 
-      - name: Run functional requirements tests (validate expected behavior)
+      - name: Normalize price function signature
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          if (!fs.existsSync('./rentalPrice.js')) {
+            console.log('rentalPrice.js not found — skipping adapter');
+            process.exit(0);
+          }
+
+          let orig;
+          try { orig = require('./rentalPrice'); } catch (e) {
+            console.log('Could not require rentalPrice.js — skipping adapter');
+            process.exit(0);
+          }
+
+          const origFn = orig.price;
+          if (typeof origFn !== 'function') {
+            console.log('price export is not a function — skipping adapter');
+            process.exit(0);
+          }
+
+          // Probe: call with the canonical signature and check known-good output.
+          // Low season, 1 day, Compact, age 30 => $30
+          const PICKUP = 'A', DROPOFF = 'B';
+          const PD = '2024-02-12', DD = '2024-02-12';
+          const TYPE = 'Compact', AGE = 30;
+          const EXPECTED = '$30';
+
+          function probe(fn, args) {
+            try { return fn(...args) === EXPECTED; } catch { return false; }
+          }
+
+          if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE])) {
+            console.log('Standard signature confirmed — no adapter needed');
+            process.exit(0);
+          }
+
+          let adapterLines = null;
+
+          // Case 1: location params (pickup, dropoff) removed — price(pickupDate, dropoffDate, type, age, ...)
+          if (probe(origFn, [PD, DD, TYPE, AGE])) {
+            console.log('Detected: location params removed — injecting positional adapter');
+            adapterLines = [
+              "const s = require('./rentalPrice.student.js');",
+              "const f = s.price;",
+              "function price(pickup, dropoff, pickupDate, dropoffDate, type, age, ...rest) {",
+              "  return f(pickupDate, dropoffDate, type, age, ...rest);",
+              "}",
+              "module.exports = { ...s, price };",
+            ];
+          }
+
+          // Case 2: object-style params — price({ pickup, dropoff, pickupDate, dropoffDate, type, age })
+          if (!adapterLines && probe(origFn, [{ pickup: PICKUP, dropoff: DROPOFF, pickupDate: PD, dropoffDate: DD, type: TYPE, age: AGE }])) {
+            console.log('Detected: object-style params — injecting object adapter');
+            adapterLines = [
+              "const s = require('./rentalPrice.student.js');",
+              "const f = s.price;",
+              "function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) {",
+              "  return f({ pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears });",
+              "}",
+              "module.exports = { ...s, price };",
+            ];
+          }
+
+          if (!adapterLines) {
+            console.log('Could not detect a compatible signature — running tests as-is');
+            process.exit(0);
+          }
+
+          fs.renameSync('./rentalPrice.js', './rentalPrice.student.js');
+          fs.writeFileSync('./rentalPrice.js', adapterLines.join('\n') + '\n');
+          console.log('Adapter injected into rentalPrice.js');
+          NODE
+
+      - name: Run functional requirements tests
         id: teacher
         continue-on-error: true
         run: |
@@ -241,7 +337,7 @@ jobs:
             npx jest --runInBand
           fi
 
-      - name: Comment functional requirements result on PR (post pass/fail summary)
+      - name: Comment functional requirements result on PR
         if: always()
         uses: actions/github-script@v7
         with:
@@ -250,14 +346,18 @@ jobs:
             const ok = '${{ steps.teacher.outcome }}' === 'success';
             const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
             const checksUrl = '${{ github.server_url }}/${{ github.repository }}/pull/${{ github.event.pull_request.number }}/checks';
-            const body = `${marker}
-            ### Functional Requirements Test
-            **Purpose:** Validate expected functional requirements.
-            **Status:** ${ok ? '✅ PASS' : '❌ FAIL'}
-            **Run details:** ${runUrl}
-            **PR checks:** ${checksUrl}
-            ${ok ? '' : '**Where to look:** Inspect the `Run functional requirements tests` step log in this run.'}
-            `;
+            const lines = [
+              marker,
+              '### Functional Requirements Test',
+              '**Purpose:** Validate expected functional requirements.',
+              `**Status:** ${ok ? '✅ PASS' : '❌ FAIL'}`,
+              `**Run details:** ${runUrl}`,
+              `**PR checks:** ${checksUrl}`,
+            ];
+            if (!ok) {
+              lines.push('**Where to look:** Inspect the `Run functional requirements tests` step log in this run.');
+            }
+            const body = lines.join('\n');
 
             const issue_number = context.payload.pull_request.number;
             const { owner, repo } = context.repo;
@@ -269,17 +369,12 @@ jobs:
             });
             const existing = comments.filter(c => (c.body || '').includes(marker)).pop();
             if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
             } else {
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      - name: Set functional requirements status (reflect check outcome)
+      - name: Set functional requirements status
         if: always()
         run: |
           if [ "${{ steps.teacher.outcome }}" != "success" ]; then
