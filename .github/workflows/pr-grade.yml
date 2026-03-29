@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Install lint toolchain
+        run: npm install --no-save eslint@8 eslint-config-airbnb-base eslint-plugin-import
+
       - name: Run ESLint
         id: lint
         continue-on-error: true
