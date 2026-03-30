@@ -4,7 +4,12 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Under 18 returns a helpful error (Driver too young)", () => {
     // Arrange
     const input = {
-      pickup: "A", dropoff: "B", pickupDate: "2026-03-01", dropoffDate: "2026-03-01", type: "Compact", age: 17
+      pickup: "A",
+      dropoff: "B",
+      pickupDate: "2026-03-01",
+      dropoffDate: "2026-03-01",
+      type: "Compact",
+      age: 17
     };
     // Act
     const result = calculatePrice(input);
@@ -16,7 +21,12 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Drivers 21 or younger cannot rent non-Compact cars", () => {
     // Arrange
     const input = {
-      pickup: "A", dropoff: "B", pickupDate: "2026-03-01", dropoffDate: "2026-03-02", type: "Electric", age: 21
+      pickup: "A",
+      dropoff: "B",
+      pickupDate: "2026-03-01",
+      dropoffDate: "2026-03-02",
+      type: "Electric",
+      age: 21
     };
     // Act
     const result = calculatePrice(input);
@@ -28,7 +38,12 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Drivers age 21 can rent Compact (type normalization handles lowercase)", () => {
     // Arrange
     const input = {
-      pickup: "A", dropoff: "B", pickupDate: "2026-03-01", dropoffDate: "2026-03-02", type: "compact", age: 21
+      pickup: "A",
+      dropoff: "B",
+      pickupDate: "2026-03-01",
+      dropoffDate: "2026-03-02",
+      type: "compact",
+      age: 21
     };
     // Act
     const result = calculatePrice(input);
@@ -104,7 +119,12 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Unknown car type yields zero price but still returns a quote", () => {
     // Arrange
     const input = {
-      pickup: "A", dropoff: "B", pickupDate: "2026-03-01", dropoffDate: "2026-03-01", type: "Spaceship", age: 30
+      pickup: "A",
+      dropoff: "B",
+      pickupDate: "2026-03-01",
+      dropoffDate: "2026-03-01",
+      type: "Spaceship",
+      age: 30
     };
     // Act
     const result = calculatePrice(input);
@@ -118,7 +138,11 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Missing type yields Unknown class and zero price", () => {
     // Arrange
     const input = {
-      pickup: "A", dropoff: "B", pickupDate: "2026-03-01", dropoffDate: "2026-03-01", age: 30
+      pickup: "A",
+      dropoff: "B",
+      pickupDate: "2026-03-01",
+      dropoffDate: "2026-03-01",
+      age: 30
     };
     // Act
     const result = calculatePrice(input);
@@ -211,7 +235,10 @@ describe("calculatePrice (Car rental pricing)", () => {
     const startTs = Date.parse("2026-06-05");
     const endTs = Date.parse("2026-06-07");
     const input = {
-      pickupDate: startTs, dropoffDate: endTs, type: "Electric", age: 30
+      pickupDate: startTs,
+      dropoffDate: endTs,
+      type: "Electric",
+      age: 30
     };
     // Act
     const result = calculatePrice(input);
@@ -223,7 +250,10 @@ describe("calculatePrice (Car rental pricing)", () => {
   test("Accepts non-ISO date strings (fallback parsing branch)", () => {
     // Arrange: use a human-readable date string
     const input = {
-      pickupDate: "June 5, 2026", dropoffDate: "June 7, 2026", type: "Electric", age: 30
+      pickupDate: "June 5, 2026",
+      dropoffDate: "June 7, 2026",
+      type: "Electric",
+      age: 30
     };
     // Act
     const result = calculatePrice(input);

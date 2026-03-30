@@ -45,8 +45,8 @@ function isHighSeason(pickupDate, dropoffDate) {
 
   return (
     (p >= start && p <= end)
-        || (d >= start && d <= end)
-        || (p < start && d > end)
+    || (d >= start && d <= end)
+    || (p < start && d > end)
   );
 }
 function parseToLocalDate(input) {
@@ -91,10 +91,16 @@ function calculatePrice({
 }) {
   const carClass = normalizeType(type);
   if (age < 18) {
-    return { success: false, message: "Driver too young - cannot quote the price" };
+    return {
+      success: false,
+      message: "Driver too young - cannot quote the price"
+    };
   }
   if (age <= 21 && carClass !== "Compact") {
-    return { success: false, message: "Drivers 21 y/o or less can only rent Compact vehicles" };
+    return {
+      success: false,
+      message: "Drivers 21 y/o or less can only rent Compact vehicles"
+    };
   }
 
   const days = getDays(pickupDate, dropoffDate);

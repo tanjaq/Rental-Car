@@ -1,21 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Result</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-        .result { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .muted { color: #666; }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+      }
+      .result {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+      .muted {
+        color: #666;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="result">
-        <h2>Rental quote for: {{CAR_TYPE}}</h2>
-        <p class="muted">Duration: {{DAYS}} day(s)</p>
-        <p>Price per day: {{PRICE_PER_DAY}}</p>
-        <p><strong>Total: {{TOTAL}}</strong></p>
+      <h2>Rental quote for: {{CAR_TYPE}}</h2>
+      <p class="muted">Duration: {{DAYS}} day(s)</p>
+      <p>Price per day: {{PRICE_PER_DAY}}</p>
+      <p><strong>Total: {{TOTAL}}</strong></p>
     </div>
-</body>
+  </body>
 </html>
