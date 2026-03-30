@@ -16,15 +16,28 @@ const resultHtml = fs.readFileSync('result.html', 'utf8');
 
 app.post('/', (req, res) => {
     const post = req.body;
-    const result = rental.price(
-        String(post.pickup),
-        String(post.dropoff),
-        Date.parse(post.pickupdate),
-        Date.parse(post.dropoffdate),
-        String(post.type),
-        Number(post.age)
-    );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+    const input = {
+        pickup: String(post.pickup),
+        dropoff: String(post.dropoff),
+        pickupDate: post.pickupdate,
+        dropoffDate: post.dropoffdate,
+        type: String(post.type),
+        age: Number(post.age),
+    };
+
+    const result = rental.calculatePrice(input);
+
+    if (!result.success) {
+        return res.send(formHtml + `<p style="color:red">${result.message}</p>`);
+    }
+
+    const filled = resultHtml
+        .replaceAll('{{CAR_TYPE}}', result.carClass)
+        .replaceAll('{{DAYS}}', String(result.days))
+        .replaceAll('{{PRICE_PER_DAY}}', '$' + result.perDay)
+        .replaceAll('{{TOTAL}}', '$' + result.total);
+
+    res.send(formHtml + filled);
 });
 
 app.get('/', (req, res) => {
