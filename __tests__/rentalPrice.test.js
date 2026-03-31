@@ -108,12 +108,12 @@ describe("calculatePrice (Car rental pricing)", () => {
     const result = calculatePrice(input);
     // Assert
     // days should be 12, base 50 -> total 600
-    // weekend days between 2026-01-01 and 2026-01-12: 4 -> surcharge = 50 * 0.1 * 4 = 20
-    // total before discount = 620 -> 10% discount => 558
+    // weekend days between 2026-01-01 and 2026-01-12: 4 -> surcharge = 50 * 0.05 * 4 = 10
+    // total before discount = 610 -> 10% discount => 549
     expect(result.success).toBe(true);
     expect(result.days).toBe(12);
     expect(result.perDay).toBe(50);
-    expect(result.total).toBe(558);
+    expect(result.total).toBe(549);
   });
 
   test("Unknown car type yields zero price but still returns a quote", () => {
@@ -202,13 +202,13 @@ describe("calculatePrice (Car rental pricing)", () => {
     // Assert
     // base 35 -> high season 1.15 => 40.25 per day
     // days = 3 -> base total = 120.75
-    // weekend surcharge = 10% per weekend day -> 0.1 * 40.25 * 2 = 8.05
-    // expected total = 120.75 + 8.05 = 128.8
+    // weekend surcharge = 5% per weekend day -> 0.05 * 40.25 * 2 = 4.025
+    // expected total = 120.75 + 4.025 = 124.775
     expect(result.success).toBe(true);
     expect(result.days).toBe(3);
     expect(result.perDay).toBeCloseTo(40.25, 2);
     expect(result.weekendDays).toBe(2);
-    expect(result.total).toBeCloseTo(128.8, 2);
+    expect(result.total).toBeCloseTo(124.78, 2);
   });
 
   test("No weekend surcharge when rental is only weekdays", () => {
@@ -244,7 +244,7 @@ describe("calculatePrice (Car rental pricing)", () => {
     const result = calculatePrice(input);
     // Assert: weekendDays 2
     expect(result.weekendDays).toBe(2);
-    expect(result.total).toBeCloseTo(128.8, 2);
+    expect(result.total).toBeCloseTo(124.78, 2);
   });
 
   test("Accepts non-ISO date strings (fallback parsing branch)", () => {
@@ -259,7 +259,7 @@ describe("calculatePrice (Car rental pricing)", () => {
     const result = calculatePrice(input);
     // Assert: weekendDays 2
     expect(result.weekendDays).toBe(2);
-    expect(result.total).toBeCloseTo(128.8, 2);
+    expect(result.total).toBeCloseTo(124.78, 2);
   });
 
   test("parseToLocalDate handles undefined and Date inputs (covers first branches)", () => {

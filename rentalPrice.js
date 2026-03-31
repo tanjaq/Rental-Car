@@ -5,6 +5,18 @@ const BASE_PRICES = {
   Racer: 100
 };
 
+const CAR_CLASSES = {
+  COMPACT: 'Compact',
+  ELECTRIC: 'Electric',
+  CABRIO: 'Cabrio',
+  RACER: 'Racer'
+};
+
+const SEASONS = {
+  HIGH: 'high',
+  LOW: 'low'
+};
+
 function normalizeType(type) {
   if (!type) {
     return "Unknown";
@@ -117,7 +129,8 @@ function calculatePrice({
 
   // weekend surcharge: 10% per weekend day
   const weekendDays = countWeekendDays(pickupDate, dropoffDate);
-  const WEEKEND_SURCHARGE = 0.1;
+  // weekend days have a small surcharge (5% per weekend day)
+  const WEEKEND_SURCHARGE = 0.05;
 
   let total = perDay * days + perDay * WEEKEND_SURCHARGE * weekendDays;
   // debug: expose weekendDays in result for test validation if needed
@@ -139,3 +152,40 @@ function calculatePrice({
 exports.calculatePrice = calculatePrice;
 exports.countWeekendDays = countWeekendDays;
 exports.parseToLocalDate = parseToLocalDate;
+
+function calculateRentalPrice({
+  carClass, driverAge, licenseYears, startDate, endDate, baseDailyPrice
+}) {
+  if (driverAge < 18) {
+    throw new Error('Driver is too young to rent a car.');
+  }
+
+  const days = getDays(startDate, endDate);
+  const high = isHighSeason(startDate, endDate);
+
+  // minimum daily price is the higher of the baseDailyPrice and the driver's age
+  const minDaily = Math.max(Number(baseDailyPrice || 0), Number(driverAge || 0));
+  let perDay = minDaily;
+
+  // apply high season multiplier first
+  if (high) {
+    perDay *= 1.15;
+  }
+
+  // racer young-driver surcharge applies only outside low season (i.e., in high season)
+  if (carClass === CAR_CLASSES.RACER && driverAge <= 25 && high) {
+    perDay *= 1.5;
+  }
+
+  let total = perDay * days;
+
+  if (days > 10 && !high) {
+    total *= 0.9; // long rental discount in low season
+  }
+
+  return Number(total.toFixed(2));
+}
+
+exports.calculateRentalPrice = calculateRentalPrice;
+exports.CAR_CLASSES = CAR_CLASSES;
+exports.SEASONS = SEASONS;

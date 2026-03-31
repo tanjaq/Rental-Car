@@ -54,6 +54,7 @@ To solve the task, proceed as follows:
   - Lisa projekti jest `npm install jest`
   - Dokumentatsioon: https://jestjs.io/docs/getting-started
   - Lisa vastav osa `package.json`-i:
+
   ```
   "scripts": {
      "test": "jest"
@@ -62,6 +63,7 @@ To solve the task, proceed as follows:
 
   - Testide jooksutamine `npx jest`
   - Testide jooksutamine analüüsiga `npx jest --coverage`
+
 - Kata testidega 100% koodist
 
 ## Ülesanne 3: TDD
