@@ -95,7 +95,7 @@ function validateDriver(age, carType) {
   }
 
   if (age < AGE_LIMITS.MIN) {
-    return "Driver too young";
+    return "Driver too young - cannot quote the price";
   }
 
   if (age <= AGE_LIMITS.YOUNG_MAX && carType !== CAR_TYPE.COMPACT) {
@@ -110,7 +110,6 @@ function validateDates(startDate, endDate) {
   const end = new Date(endDate);
 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    console.log(start, startDate);
     return "Invalid date specified";
   }
 

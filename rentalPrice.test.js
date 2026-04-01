@@ -33,7 +33,7 @@ describe("Rental Price Calculator", () => {
 
   test("under 18 cannot rent", () => {
     expect(price("2027-01-01", "2027-01-02", "Compact", 17, 5)).toBe(
-      "Driver too young"
+      "Driver too young - cannot quote the price"
     );
   });
 
