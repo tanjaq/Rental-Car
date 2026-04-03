@@ -1,75 +1,75 @@
+const HIGH_SEASON_SURCHARGE = 1.15;
+const RACER_YOUNG_DRIVER_SURCHARGE = 1.5;
+const LONG_RENTAL_DISCOUNT = 0.9;
+const HIGH_SEASON_START_MONTH = 3; // April
+const HIGH_SEASON_END_MONTH = 9; // October
+const MAX_LOW_SEASON_DURATION = 30 + 31 + 31 + 29 + 31;
+const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
+const MIN_RENTAL_AGE = 18;
+const COMPACT_ONLY_AGE_THRESHOLD = 21;
+const RACER_SURCHARGE_AGE_LIMIT = 25;
+const LONG_RENTAL_THRESHOLD_DAYS = 10;
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
-  const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
+function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType, driverAge) {
+    const normalizedCarType = carType.toLowerCase();
+    const carPickupDate = new Date(pickupDate);
+    const carDropoffDate = new Date(dropoffDate);
+    const rentDays = getTotalRentalDays(carPickupDate, carDropoffDate);
+    const season = getSeason(carPickupDate, carDropoffDate, rentDays);
 
-  if (age < 18) {
-      return "Driver too young - cannot quote the price";
-  }
+    if (driverAge < MIN_RENTAL_AGE) {
+        return "Driver too young - cannot quote the price";
+    }
 
-  if (age <= 21 && clazz !== "Compact") {
-      return "Drivers 21 y/o or less can only rent Compact vehicles";
-  }
+    if (driverAge <= COMPACT_ONLY_AGE_THRESHOLD && normalizedCarType !== "compact") {
+        return `Drivers ${COMPACT_ONLY_AGE_THRESHOLD} y/o or less can only rent Compact vehicles`;
+    }
 
-  let rentalprice = age * days;
+    let rentalprice = driverAge;
 
-  if (clazz === "Racer" && age <= 25 && season === "High") {
-      rentalprice *= 1.5;
-  }
+    if (season === "High") {
+        rentalprice *= HIGH_SEASON_SURCHARGE;
+    }
 
-  if (season === "High" ) {
-    rentalprice *= 1.15;
-  }
+    if (normalizedCarType === "racer" && driverAge <= RACER_SURCHARGE_AGE_LIMIT && season === "High") {
+        rentalprice *= RACER_YOUNG_DRIVER_SURCHARGE;
+    }
 
-  if (days > 10 && season === "Low" ) {
-      rentalprice *= 0.9;
-  }
-  return '$' + rentalprice;
+    if (rentDays > LONG_RENTAL_THRESHOLD_DAYS && season === "Low") {
+        rentalprice *= LONG_RENTAL_DISCOUNT;
+    }
+
+    return '$' + rentalprice.toFixed(2);
 }
 
-function getClazz(type) {
-  switch (type) {
-      case "Compact":
-          return "Compact";
-      case "Electric":
-          return "Electric";
-      case "Cabrio":
-          return "Cabrio";
-      case "Racer":
-          return "Racer";
-      default:
-          return "Unknown";
-  }
+function getTotalRentalDays(carPickupDate, carDropoffDate) {
+
+    return Math.round(Math.abs((carPickupDate - carDropoffDate) / ONE_DAY_IN_MS)) + 1;
 }
 
-function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const firstDate = new Date(pickupDate);
-  const secondDate = new Date(dropoffDate);
+function getSeason(carPickupDate, carDropoffDate, rentDays) {
+    const pickupMonth = carPickupDate.getMonth();
+    const dropoffMonth = carDropoffDate.getMonth();
 
-  return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
-}
-
-function getSeason(pickupDate, dropoffDate) {
-  const pickup = new Date(pickupDate);
-  const dropoff = new Date(dropoffDate);
-
-  const start = 4; 
-  const end = 10;
-
-  const pickupMonth = pickup.getMonth();
-  const dropoffMonth = dropoff.getMonth();
-
-  if (
-      (pickupMonth >= start && pickupMonth <= end) ||
-      (dropoffMonth >= start && dropoffMonth <= end) ||
-      (pickupMonth < start && dropoffMonth > end)
-  ) {
-      return "High";
-  } else {
-      return "Low";
-  }
+    if (
+        (pickupMonth >= HIGH_SEASON_START_MONTH && pickupMonth <= HIGH_SEASON_END_MONTH) ||
+        (dropoffMonth >= HIGH_SEASON_START_MONTH && dropoffMonth <= HIGH_SEASON_END_MONTH) ||
+        (rentDays > MAX_LOW_SEASON_DURATION)
+    ) {
+        return "High";
+    } else {
+        return "Low";
+    }
 }
 
 exports.price = price;
+
+// - Rental cars are categorized into 4 classes: Compact, Electric, Cabrio, Racer.
+// - Individuals under the age of 18 are ineligible to rent a car.
+// - Those aged 18-21 can only rent Compact cars.
+// - For Racers, the price is increased by 50% if the driver is 25 years old or younger (except during the low season).
+// - Low season is from November until end of March.
+// - High season is from April until end of October.
+// - If renting in High season, price is increased by 15%.
+// - If renting for more than 10 days, price is decresed by 10% (except during the high season).
+// - The minimum rental price per day is equivalent to the age of the driver.
