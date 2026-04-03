@@ -54,6 +54,7 @@ function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType
     if (driverLicenseAge < YOUNG_LICENSE_SURCHARGE_THRESHOLD) {
         rentalprice *= YOUNG_LICENSE_SURCHARGE_MULTIPLIER;
     }
+
     if (
         (driverLicenseAge < MID_LICENSE_FLAT_FEE_THRESHOLD) &&
         (season === "High")

@@ -1,13 +1,12 @@
 {
     "name": "car-rental",
     "version": "1.0.0",
-    "description": "",
+    "description": "The client's request is to improve the program code to meet clean code standards while ensuring that all specified business requirements are met. This includes addressing bugs in the current code and incorporating any missing pieces of code to fulfill new requirements.",
     "main": "index.js",
     "dependencies": {
         "body-parser": "^1.20.2",
         "express": "^4.18.2",
-        "fs": "^0.0.1-security",
-        "jest": "^30.2.0"
+        "fs": "^0.0.1-security"
     },
     "scripts": {
         "test": "jest"
@@ -18,6 +17,16 @@
     "devDependencies": {
         "eslint": "^8.57.1",
         "eslint-config-airbnb-base": "^15.0.0",
-        "eslint-plugin-import": "^2.32.0"
-    }
+        "eslint-plugin-import": "^2.32.0",
+        "jest": "^30.3.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/RaulRooso/Rental-Car.git"
+    },
+    "type": "commonjs",
+    "bugs": {
+        "url": "https://github.com/RaulRooso/Rental-Car/issues"
+    },
+    "homepage": "https://github.com/RaulRooso/Rental-Car#readme"
 }
