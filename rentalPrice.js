@@ -10,12 +10,24 @@ const COMPACT_ONLY_AGE_THRESHOLD = 21;
 const RACER_SURCHARGE_AGE_LIMIT = 25;
 const LONG_RENTAL_THRESHOLD_DAYS = 10;
 
-function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType, driverAge) {
+const MIN_LICENSE_YEARS_FOR_RENTAL = 1;
+const YOUNG_LICENSE_SURCHARGE_THRESHOLD = 2;
+const YOUNG_LICENSE_SURCHARGE_MULTIPLIER = 1.3;
+const MID_LICENSE_FLAT_FEE_THRESHOLD = 3;
+const MID_LICENSE_FLAT_FEE_AMOUNT = 15;
+
+function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType, driverAge, licenseDate) {
     const normalizedCarType = carType.toLowerCase();
     const carPickupDate = new Date(pickupDate);
     const carDropoffDate = new Date(dropoffDate);
     const rentDays = getTotalRentalDays(carPickupDate, carDropoffDate);
     const season = getSeason(carPickupDate, carDropoffDate, rentDays);
+    const driverLicenseDate = new Date(licenseDate);
+    const driverLicenseAge = getYearsSince(driverLicenseDate, carPickupDate);
+
+    if (driverLicenseAge < MIN_LICENSE_YEARS_FOR_RENTAL) {
+        return "Driver license held less than one year - cannot quote the price"
+    }
 
     if (driverAge < MIN_RENTAL_AGE) {
         return "Driver too young - cannot quote the price";
@@ -37,6 +49,16 @@ function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType
 
     if (rentDays > LONG_RENTAL_THRESHOLD_DAYS && season === "Low") {
         rentalprice *= LONG_RENTAL_DISCOUNT;
+    }
+
+    if (driverLicenseAge < YOUNG_LICENSE_SURCHARGE_THRESHOLD) {
+        rentalprice *= YOUNG_LICENSE_SURCHARGE_MULTIPLIER;
+    }
+    if (
+        (driverLicenseAge < MID_LICENSE_FLAT_FEE_THRESHOLD) &&
+        (season === "High")
+    ) {
+        rentalprice += MID_LICENSE_FLAT_FEE_AMOUNT;
     }
 
     return '$' + rentalprice.toFixed(2);
@@ -62,14 +84,22 @@ function getSeason(carPickupDate, carDropoffDate, rentDays) {
     }
 }
 
+function getYearsSince(startDate, endDate) {
+    let years = endDate.getFullYear() - startDate.getFullYear();
+
+    const monthDiff = endDate.getMonth() - startDate.getMonth();
+    const dayDiff = endDate.getDate() - startDate.getDate();
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+        years--;
+    }
+
+    return years;
+}
+
 exports.price = price;
 
-// - Rental cars are categorized into 4 classes: Compact, Electric, Cabrio, Racer.
-// - Individuals under the age of 18 are ineligible to rent a car.
-// - Those aged 18-21 can only rent Compact cars.
-// - For Racers, the price is increased by 50% if the driver is 25 years old or younger (except during the low season).
-// - Low season is from November until end of March.
-// - High season is from April until end of October.
-// - If renting in High season, price is increased by 15%.
-// - If renting for more than 10 days, price is decresed by 10% (except during the high season).
-// - The minimum rental price per day is equivalent to the age of the driver.
+//  New requirements:
+//   * Individuals holding a driver's license for less than a year are ineligible to rent.
+//   * If the driver's license has been held for less than two years, the rental price is increased by 30%.
+//   * If the driver's license has been held for less than three years, then an additional 15 euros will be added to the daily rental price during high season.
