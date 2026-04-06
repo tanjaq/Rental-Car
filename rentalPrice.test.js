@@ -29,6 +29,18 @@ describe("calculatePrice – validation rules", () => {
         expect(result).toBe("Drivers 21 y/o or less can only rent Compact vehicles");
     });
 
+    test("Drivers with license less than 1 year cannot rent", () => {
+        const result = calculatePrice(
+            "Compact",
+            25,
+            "2026-01-01",
+            "2026-05-01",
+            "2026-05-05"
+        );
+
+        expect(result).toBe("Individuals holding a driver's license for less than a year are ineligible to rent");
+    });
+
 
 });
 
@@ -59,6 +71,18 @@ describe("calculatePrice – season logic", () => {
 
         const price = Number(result.replace("$", ""));
         expect(price).toBeLessThan(30 * 15);
+    });
+
+    test("High season spans across months", () => {
+        const result = calculatePrice(
+            "Compact",
+            30,
+            "2015-01-01",
+            "2024-02-15",
+            "2024-05-15"
+        );
+
+        expect(result.startsWith("$")).toBe(true);
     });
 
 });
@@ -103,6 +127,34 @@ describe("calculatePrice – pricing rules", () => {
         );
 
         expect(result).toBe("$152.50");
+    });
+
+    test("License less than 2 years increases price by 30%", () => {
+        const result = calculatePrice(
+            "Compact",
+            25,
+            "2025-01-01",
+            "2026-01-06",
+            "2026-01-08"
+        );
+
+        const price = Number(result.replace("$", ""));
+        // Base: 25 * 3 = 75, then *1.3 = 97.5
+        expect(price).toBe(97.5);
+    });
+
+    test("License less than 3 years in high season adds 15€ daily", () => {
+        const result = calculatePrice(
+            "Compact",
+            25,
+            "2024-01-01",
+            "2026-05-05",
+            "2026-05-07"
+        );
+
+        const price = Number(result.replace("$", ""));
+        // Daily: 25 + 15 = 40, *3 = 120, high season *1.15 = 138
+        expect(price).toBe(138);
     });
 
 });
