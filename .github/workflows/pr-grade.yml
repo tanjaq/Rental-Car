@@ -337,7 +337,11 @@ jobs:
           }
 
           if (!adapterLines) {
-            console.log('Could not detect a compatible signature — running tests as-is');
+            // Sample the actual return value to give a more useful log message
+            let sample;
+            try { sample = JSON.stringify(origFn(PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY)); } catch (e) { sample = String(e); }
+            console.log('No compatible signature detected. Sample return value: ' + sample);
+            console.log('Likely cause: function returns a non-string type (e.g. object). Running tests as-is — they will fail if the API contract changed.');
             process.exit(0);
           }
 
