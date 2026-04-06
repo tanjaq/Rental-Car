@@ -29,9 +29,12 @@ function calculatePrice(carType, driverAge, licenseDate, pickupDate, dropoffDate
         dailyPrice += 15;
     }
 
+    // Count rental days separately by weekday and weekend.
+    // Weekdays cost the normal daily rate, weekend days get a 5% surcharge.
     const weekdayCount = countDaysByType(pickupDate, dropoffDate, "weekday");
     const weekendCount = countDaysByType(pickupDate, dropoffDate, "weekend");
 
+    // Calculate the base total using the weekend premium on weekend days only.
     let totalPrice = weekdayCount * dailyPrice + weekendCount * dailyPrice * 1.05;
 
     if (season === SEASON.HIGH) {
