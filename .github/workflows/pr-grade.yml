@@ -270,11 +270,13 @@ jobs:
             process.exit(0);
           }
 
-          const origFn = orig.price;
+          const exportName = typeof orig.price === 'function' ? 'price' : 'calculatePrice';
+          const origFn = orig[exportName];
           if (typeof origFn !== 'function') {
-            console.log('price export is not a function — skipping adapter');
+            console.log('No price or calculatePrice export found — skipping adapter');
             process.exit(0);
           }
+          console.log(`Found export: ${exportName}`);
 
           // Probe: call with the canonical signature and check known-good output.
           // Low season, 1 day, Compact, age 30, licenseYears 10 => $30
@@ -301,7 +303,7 @@ jobs:
             console.log('Detected: location params removed — injecting positional adapter');
             adapterLines = [
               "const s = require('./rentalPrice.student.js');",
-              "const f = s.price;",
+              "const f = s." + exportName + ";",
               "function price(pickup, dropoff, pickupDate, dropoffDate, type, age, ...rest) {",
               "  return f(pickupDate, dropoffDate, type, age, ...rest);",
               "}",
@@ -314,12 +316,24 @@ jobs:
             console.log('Detected: object-style params — injecting object adapter');
             adapterLines = [
               "const s = require('./rentalPrice.student.js');",
-              "const f = s.price;",
+              "const f = s." + exportName + ";",
               "function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) {",
               "  return f({ pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears });",
               "}",
               "module.exports = { ...s, price };",
             ];
+          }
+
+          // Case 3: standard signature but exported as calculatePrice
+          if (!adapterLines && exportName !== 'price') {
+            if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY])) {
+              console.log('Detected: standard signature exported as calculatePrice — aliasing');
+              adapterLines = [
+                "const s = require('./rentalPrice.student.js');",
+                "const price = s.calculatePrice;",
+                "module.exports = { ...s, price };",
+              ];
+            }
           }
 
           if (!adapterLines) {
