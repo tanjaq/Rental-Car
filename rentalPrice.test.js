@@ -1,4 +1,4 @@
-const { calculatePrice } = require("./rentalPrice");
+const { calculatePrice, getWeekandDays, getWeekDays, getWeekWeekendDays } = require("./rentalPrice");
 
 
 describe("calculatePrice – validation rules", () => {
@@ -79,6 +79,30 @@ describe("calculatePrice – pricing rules", () => {
         const base = 25 * 3 * 1.15;
 
         expect(price).toBeGreaterThan(base);
+    });
+
+    test("Weekday pricing only for Mon-Tue-Wed rentals", () => {
+        const result = calculatePrice(
+            "Compact",
+            50,
+            "2010-01-01",
+            "2025-01-06",
+            "2025-01-08"
+        );
+
+        expect(result).toBe("$150.00");
+    });
+
+    test("Weekend premium applies only to weekend days", () => {
+        const result = calculatePrice(
+            "Compact",
+            50,
+            "2010-01-01",
+            "2025-01-09",
+            "2025-01-11"
+        );
+
+        expect(result).toBe("$152.50");
     });
 
 });

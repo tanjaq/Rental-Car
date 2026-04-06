@@ -24,12 +24,15 @@ function calculatePrice(carType, driverAge, licenseDate, pickupDate, dropoffDate
 
     let dailyPrice = driverAge;
 
-    // nouedest: kui license < 3 years lisame 15€ igapaeviti in High Season
+    // nouedest: kui license < 3 years lisame 15€ igapäevaselt High Seasonis
     if (licenseYears < 3 && season === SEASON.HIGH) {
         dailyPrice += 15;
     }
 
-    let totalPrice = dailyPrice * days;
+    const weekdayCount = countDaysByType(pickupDate, dropoffDate, "weekday");
+    const weekendCount = countDaysByType(pickupDate, dropoffDate, "weekend");
+
+    let totalPrice = weekdayCount * dailyPrice + weekendCount * dailyPrice * 1.05;
 
     if (season === SEASON.HIGH) {
         totalPrice *= 1.15;
