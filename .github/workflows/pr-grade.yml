@@ -277,17 +277,19 @@ jobs:
           }
 
           // Probe: call with the canonical signature and check known-good output.
-          // Low season, 1 day, Compact, age 30 => $30
+          // Low season, 1 day, Compact, age 30, licenseYears 10 => $30
+          // LY=10 ensures students who default undefined→0 don't get a license
+          // error and a false probe miss.
           const PICKUP = 'A', DROPOFF = 'B';
           const PD = '2024-02-12', DD = '2024-02-12';
-          const TYPE = 'Compact', AGE = 30;
+          const TYPE = 'Compact', AGE = 30, LY = 10;
           const EXPECTED = '$30';
 
           function probe(fn, args) {
             try { return fn(...args) === EXPECTED; } catch { return false; }
           }
 
-          if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE])) {
+          if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY])) {
             console.log('Standard signature confirmed — no adapter needed');
             process.exit(0);
           }
@@ -295,7 +297,7 @@ jobs:
           let adapterLines = null;
 
           // Case 1: location params (pickup, dropoff) removed — price(pickupDate, dropoffDate, type, age, ...)
-          if (probe(origFn, [PD, DD, TYPE, AGE])) {
+          if (probe(origFn, [PD, DD, TYPE, AGE, LY])) {
             console.log('Detected: location params removed — injecting positional adapter');
             adapterLines = [
               "const s = require('./rentalPrice.student.js');",
@@ -308,7 +310,7 @@ jobs:
           }
 
           // Case 2: object-style params — price({ pickup, dropoff, pickupDate, dropoffDate, type, age })
-          if (!adapterLines && probe(origFn, [{ pickup: PICKUP, dropoff: DROPOFF, pickupDate: PD, dropoffDate: DD, type: TYPE, age: AGE }])) {
+          if (!adapterLines && probe(origFn, [{ pickup: PICKUP, dropoff: DROPOFF, pickupDate: PD, dropoffDate: DD, type: TYPE, age: AGE, licenseYears: LY }])) {
             console.log('Detected: object-style params — injecting object adapter');
             adapterLines = [
               "const s = require('./rentalPrice.student.js');",
