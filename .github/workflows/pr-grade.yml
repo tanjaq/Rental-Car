@@ -30,13 +30,13 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Install lint toolchain
-        run: npm install --no-save eslint@8 eslint-config-airbnb-base eslint-plugin-import
+        run: npm install --no-save --legacy-peer-deps eslint@8 eslint-config-airbnb-base eslint-plugin-import
 
       - name: Run ESLint
         id: lint
         continue-on-error: true
         run: |
-          npx --yes eslint@8 . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]' 2>&1 | tee /tmp/lint-output.txt
+          ./node_modules/.bin/eslint . --max-warnings=0 --rule 'camelcase:["error",{"properties":"always"}]' 2>&1 | tee /tmp/lint-output.txt
           exit ${PIPESTATUS[0]}
 
       - name: Read lint output
