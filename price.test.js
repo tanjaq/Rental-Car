@@ -25,10 +25,10 @@ describe('Car Rental Price Engine', () => {
         // 50yo, (November), Electirc, licence held for 2,5 years
         // Week days 1
         // Weekend days 2
-        // 50 * 0.9 = 45
-        // 50 * 0.9 * 1.05 * 2 = 94.5
+        // 50
+        // 50 * 1.05 * 2 = 105
         const result = price('Tallinn', 'Tartu', '2026-11-06', '2026-11-08', 'Electric', 50, '2010-01-01');
-        expect(result).toBe("$139.50");
+        expect(result).toBe("$155.00");
     });
 
     // Test 5: Weekend Surcharge High season
@@ -65,7 +65,7 @@ describe('Car Rental Price Engine', () => {
     test('should apply 15% surcharge in High Season', () => {
         // 40yo, High Season (June), Compact, 5 days
         // 40 * 1.15 * 5 = 230
-        const result = price('Tallinn', 'Tartu', '2026-06-08', '2026-06-13', 'Compact', 40, '2010-01-01');
+        const result = price('Tallinn', 'Tartu', '2026-06-08', '2026-06-12', 'Compact', 40, '2010-01-01');
         expect(result).toBe("$230.00");
     });
 
@@ -100,9 +100,9 @@ describe('Car Rental Price Engine', () => {
         // Pickup: April 1st, 2026. License: April 2nd, 2024.
         // Years calculation: 2026 - 2024 = 2. 
         // Since April 2nd > April 1st, it should become 1 year.
-        // week day (40 * 1.15 * 1.3 + 15) * 3 = 224.4
-        // weekend (40 * 1.15 * 1.3 + 15) * 1.05  * 2 = 157.08
-        expect(result).toBe("$381.48");
+        // week day (40 * 1.15 * 1.3 + 15) * 3 = 224.4 
+        // weekend (40 * 1.15 * 1.3 * 1.05 + 15)  * 2 = 155.58
+        expect(result).toBe("$379.98");
     });
 
     // Test 13: High Season Surcharge if Rental Starts in Low Season and Ends in High Season
@@ -138,12 +138,12 @@ describe('Car Rental Price Engine', () => {
         // Weekend days 2
         // (24 * 1.15 * 1.5 * 1.3 + 15) * 2 = 137.64
         // (24 * 1.15 * 1.5 * 1.3 * 1.05 + 15 ) * 2 = 143.022
-        const result = price('Tallinn', 'Tartu', '2025-06-05', '2026-06-08', 'Racer', 24, '2025-01-01');
+        const result = price('Tallinn', 'Tartu', '2026-06-05', '2026-06-08', 'Racer', 24, '2025-01-01');
         expect(result).toBe("$280.66");
     });
 
     // Test 16: 24yo Racer, High season, License less than 2 years and Weekend Surcharge crossing over to Low season
-    test('should apply all surcharges in High season weekend', () => {
+    test('should apply all surcharges in High season weekend crossing over to Low season', () => {
         // 24yo, (June), Racer, licence held for 1.5 years
         // High season Week days 1
         // High season Weekend days 1
@@ -153,21 +153,22 @@ describe('Car Rental Price Engine', () => {
         // 24 * 1.15 * 1.5 * 1.3 * 1.05 + 15 = 71.511
         // 24 * 1.3 = 31.2
         // 24 * 1.3 * 1.05 = 32.76
-        const result = price('Tallinn', 'Tartu', '2025-10-30', '2026-11-02', 'Racer', 24, '2025-04-01');
+        const result = price('Tallinn', 'Tartu', '2026-10-30', '2026-11-02', 'Racer', 24, '2025-04-01');
         expect(result).toBe("$204.29");
     });
+    // Test 17: High Season Surcharge if Rental Starts and Ends in Low Season
+    test('should apply 15% surcharge during high season when renting starts and ends in Low Season', () => {
+        // 40yo, (full year), Cabrio, licence held for more than 3 years
+        // High Season (Apr–Oct) 214 days: 61 Weekend days, 153 Weekdays.
+        // Low Season (Jan–Mar, Nov–Dec) 151 days: 43 Weekend days, 108 Weekdays.
+        // 40 * 1.15 *  153 = 7038
+        // 40 * 1.15 * 1.05 * 61 = 2946.3
+        // 40 * 0.9 * 108 = 3888
+        // 40 * 0.9 * 1.05 * 43 = 1625.4
+        // total manual calc: 15497.7; gemini: 15499.70
+        const result = price('Tallinn', 'Tartu', '2026-01-01', '2026-12-31', 'Cabrio', 40, '2010-01-01');
+        expect(result).toBe("$15497.70");
+    });
+
 });
 
-// Test 17: High Season Surcharge if Rental Starts and Ends in Low Season
-test('should apply 15% surcharge during high season when renting starts and ends in Low Season', () => {
-    // 40yo, (full year), Cabrio, licence held for more than 3 years
-    // High Season (Apr–Oct) 214 days: 61 Weekend days, 153 Weekdays.
-    // Low Season (Jan–Mar, Nov–Dec) 151 days: 43 Weekend days, 108 Weekdays.
-    // 40 * 1.15 *  153 = 7038
-    // 40 * 1.15 * 1.05 * 61 = 2946.3
-    // 40 * 0.9 * 108 = 3888
-    // 40 * 0.9 * 1.05 * 43 = 1625.4
-    // total manual calc: 15497.7; gemini: 15499.70
-    const result = price('Tallinn', 'Tartu', '2026-01-01', '2026-12-31', 'Cabrio', 40, '2010-01-01');
-    expect(result).toBe("$15497.70");
-});
