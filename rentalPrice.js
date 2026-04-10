@@ -1,75 +1,115 @@
+const HIGH_SEASON_SURCHARGE = 1.15;
+const RACER_YOUNG_DRIVER_SURCHARGE = 1.5;
+const LONG_RENTAL_DISCOUNT = 0.9;
+const WEEKEND_SURCHARGE = 1.05; // 5% extra
+const HIGH_SEASON_START_MONTH = 3; // April
+const HIGH_SEASON_END_MONTH = 9; // October
+const MIN_RENTAL_AGE = 18;
+const COMPACT_ONLY_AGE_THRESHOLD = 21;
+const RACER_SURCHARGE_AGE_LIMIT = 25;
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
-  const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
+const MIN_LICENSE_YEARS_FOR_RENTAL = 1;
+const YOUNG_LICENSE_SURCHARGE_THRESHOLD = 2;
+const YOUNG_LICENSE_SURCHARGE_MULTIPLIER = 1.3;
+const MID_LICENSE_FLAT_FEE_THRESHOLD = 3;
+const MID_LICENSE_FLAT_FEE_AMOUNT = 15;
+const LONG_RENTAL_THRESHOLD_DAYS = 10;
 
-  if (age < 18) {
-      return "Driver too young - cannot quote the price";
-  }
+function price(pickupLocation, dropoffLocation, pickupDate, dropoffDate, carType, driverAge, licenseDate) {
+    const normalizedCarType = carType.toLowerCase();
+    const carPickupDate = new Date(pickupDate);
+    const carDropoffDate = new Date(dropoffDate);
+    const rentDays = getTotalRentalDays(carPickupDate, carDropoffDate);
+    const driverLicenseDate = new Date(licenseDate);
+    const driverLicenseAge = getYearsSince(driverLicenseDate, carPickupDate);
 
-  if (age <= 21 && clazz !== "Compact") {
-      return "Drivers 21 y/o or less can only rent Compact vehicles";
-  }
+    if (driverLicenseAge < MIN_LICENSE_YEARS_FOR_RENTAL)
+        return "Driver license held less than one year - cannot quote the price";
 
-  let rentalprice = age * days;
+    if (driverAge < MIN_RENTAL_AGE)
+        return "Driver too young - cannot quote the price";
 
-  if (clazz === "Racer" && age <= 25 && season === "High") {
-      rentalprice *= 1.5;
-  }
+    if (driverAge <= COMPACT_ONLY_AGE_THRESHOLD && normalizedCarType !== "compact") {
+        return `Drivers ${COMPACT_ONLY_AGE_THRESHOLD} y/o or less can only rent Compact vehicles`;
+    }
 
-  if (season === "High" ) {
-    rentalprice *= 1.15;
-  }
+    let lowSeasonSubtotal = 0;
+    let highSeasonSubtotal = 0;
 
-  if (days > 10 && season === "Low" ) {
-      rentalprice *= 0.9;
-  }
-  return '$' + rentalprice;
+    let current = new Date(carPickupDate);
+
+    while (current <= carDropoffDate) {
+        let dailyPrice = driverAge;
+        const isHigh = isHighSeason(current);
+
+        // High season
+        if (isHigh) {
+            dailyPrice *= HIGH_SEASON_SURCHARGE;
+        }
+
+        // Racer surcharge
+        if (
+            isHigh &&
+            normalizedCarType === "racer" &&
+            driverAge <= RACER_SURCHARGE_AGE_LIMIT
+        ) {
+            dailyPrice *= RACER_YOUNG_DRIVER_SURCHARGE;
+        }
+        // License < 2 years
+        if (driverLicenseAge < YOUNG_LICENSE_SURCHARGE_THRESHOLD) {
+            dailyPrice *= YOUNG_LICENSE_SURCHARGE_MULTIPLIER;
+        }
+
+        // Weekend
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            dailyPrice *= WEEKEND_SURCHARGE;
+        }
+
+        // Flat fee LAST
+        if (
+            driverLicenseAge < MID_LICENSE_FLAT_FEE_THRESHOLD &&
+            isHigh
+        ) {
+            dailyPrice += MID_LICENSE_FLAT_FEE_AMOUNT;
+        }
+
+        // Add ONCE to correct subtotal
+        if (isHigh) {
+            highSeasonSubtotal += dailyPrice;
+        } else {
+            lowSeasonSubtotal += dailyPrice;
+        }
+
+        // next day
+        current.setDate(current.getDate() + 1);
+    }
+
+    // Apply discount ONLY to low season
+    if (rentDays > LONG_RENTAL_THRESHOLD_DAYS) {
+        lowSeasonSubtotal *= LONG_RENTAL_DISCOUNT;
+    }
+
+    const totalPrice = lowSeasonSubtotal + highSeasonSubtotal;
+    return '$' + totalPrice.toFixed(2);
 }
 
-function getClazz(type) {
-  switch (type) {
-      case "Compact":
-          return "Compact";
-      case "Electric":
-          return "Electric";
-      case "Cabrio":
-          return "Cabrio";
-      case "Racer":
-          return "Racer";
-      default:
-          return "Unknown";
-  }
+function getTotalRentalDays(startDate, endDate) {
+    return Math.round(Math.abs((startDate - endDate) / (24 * 60 * 60 * 1000))) + 1;
 }
 
-function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const firstDate = new Date(pickupDate);
-  const secondDate = new Date(dropoffDate);
-
-  return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
+function getYearsSince(startDate, endDate) {
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    if (endDate.getMonth() < startDate.getMonth() ||
+        (endDate.getMonth() === startDate.getMonth() && endDate.getDate() < startDate.getDate())) {
+        years--;
+    }
+    return years;
 }
 
-function getSeason(pickupDate, dropoffDate) {
-  const pickup = new Date(pickupDate);
-  const dropoff = new Date(dropoffDate);
-
-  const start = 4; 
-  const end = 10;
-
-  const pickupMonth = pickup.getMonth();
-  const dropoffMonth = dropoff.getMonth();
-
-  if (
-      (pickupMonth >= start && pickupMonth <= end) ||
-      (dropoffMonth >= start && dropoffMonth <= end) ||
-      (pickupMonth < start && dropoffMonth > end)
-  ) {
-      return "High";
-  } else {
-      return "Low";
-  }
+function isHighSeason(date) {
+    const month = date.getMonth();
+    return month >= HIGH_SEASON_START_MONTH && month <= HIGH_SEASON_END_MONTH;
 }
 
 exports.price = price;
