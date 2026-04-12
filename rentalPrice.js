@@ -12,6 +12,11 @@ const LONG_RENTAL_DISCOUNT = 0.9;
 const LICENSE_LT_2_MULTIPLIER = 1.3;
 const LICENSE_LT_3_HIGH_SEASON_DAILY_ADD = 15;
 
+function getWeekdayMultiplier(date) {
+  const day = new Date(date).getDay();
+  return day === 0 || day === 6 ? 1.05 : 1;
+}
+
 function getCarClass(type) {
   const classes = {
     Compact: "Compact",
@@ -138,7 +143,15 @@ function price(
 
   dailyPrice = applyLicenseRules(dailyPrice, licenseYears, season);
 
-  let totalPrice = dailyPrice * days;
+  let totalPrice = 0;
+
+  const currentDate = new Date(pickupDate);
+
+  for (let i = 0; i < days; i += 1) {
+    const weekdayMultiplier = getWeekdayMultiplier(currentDate);
+    totalPrice += dailyPrice * weekdayMultiplier;
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
 
   totalPrice = applyRacerRule(totalPrice, carClass, age, season);
   totalPrice = applyLongRentalDiscount(totalPrice, days, season);

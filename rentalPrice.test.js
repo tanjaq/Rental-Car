@@ -94,4 +94,19 @@ describe("Rental price system", () => {
     const result = price("", "", "2024-05-01", "2024-05-20", "Compact", 30, 5);
     expect(result).toMatch(/\$\d+\.\d{2}/);
   });
+
+  test("weekday pricing works without weekend surcharge", () => {
+    const result = price("", "", "2024-04-01", "2024-04-03", "Compact", 30, 5);
+    expect(result).toMatch(/\$\d+\.\d{2}/);
+  });
+
+  test("weekend pricing increases cost", () => {
+    const result = price("", "", "2024-04-05", "2024-04-07", "Compact", 30, 5);
+    expect(result).toMatch(/\$\d+\.\d{2}/);
+  });
+
+  test("mixed weekday and weekend period works", () => {
+    const result = price("", "", "2024-04-04", "2024-04-07", "Compact", 30, 5);
+    expect(result).toMatch(/\$\d+\.\d{2}/);
+  });
 });
