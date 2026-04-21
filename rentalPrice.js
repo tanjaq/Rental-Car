@@ -1,19 +1,19 @@
 const CAR_TYPES = {
-  COMPACT: 'Compact',
-  ELECTRIC: 'Electric',
-  CABRIO: 'Cabrio',
-  RACER: 'Racer',
+  COMPACT: "Compact",
+  ELECTRIC: "Electric",
+  CABRIO: "Cabrio",
+  RACER: "Racer"
 };
 
 const SEASONS = {
-  LOW: 'Low',
-  HIGH: 'High',
+  LOW: "Low",
+  HIGH: "High"
 };
 
 const MESSAGES = {
-  TOO_YOUNG: 'Driver too young - cannot quote the price',
-  ONLY_COMPACT: 'Drivers 21 y/o or less can only rent Compact vehicles',
-  LICENSE_TOO_NEW: 'Driver has held license for less than 1 year - cannot quote the price',
+  TOO_YOUNG: "Driver too young - cannot quote the price",
+  ONLY_COMPACT: "Drivers 21 y/o or less can only rent Compact vehicles",
+  LICENSE_TOO_NEW: "Driver has held license for less than 1 year - cannot quote the price"
 };
 
 const MIN_DRIVER_AGE = 18;
@@ -30,34 +30,29 @@ const MIN_LICENSE_YEARS = 1;
 const NEW_DRIVER_SURCHARGE_LICENSE_YEARS = 2;
 const HIGH_SEASON_DAILY_FEE_LICENSE_YEARS = 3;
 
-function price(
-  pickup,
-  dropoff,
-  pickupDate,
-  dropoffDate,
-  type,
-  age,
-  licenseYears = HIGH_SEASON_DAILY_FEE_LICENSE_YEARS,
-) {
-  const validationMessage = validateDriver(age, type, licenseYears);
+function createUtcDate(value) {
+  const date = new Date(value);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
 
-  if (validationMessage) {
-    return validationMessage;
+function getSeason(dateValue) {
+  const month = createUtcDate(dateValue).getUTCMonth();
+  const isHighSeasonMonth = month >= 3 && month <= 9;
+
+  return isHighSeasonMonth ? SEASONS.HIGH : SEASONS.LOW;
+}
+
+function isWeekend(dateValue) {
+  const day = createUtcDate(dateValue).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function formatPrice(amount) {
+  if (Number.isInteger(amount)) {
+    return `$${amount}`;
   }
 
-  const rentalDays = getRentalDays(pickupDate, dropoffDate);
-  const rentalDates = getRentalDates(pickupDate, dropoffDate);
-  let totalPrice = 0;
-
-  for (const rentalDate of rentalDates) {
-    totalPrice += calculateDailyPrice(rentalDate, type, age, licenseYears);
-  }
-
-  if (rentalDays > LONG_RENTAL_DISCOUNT_DAYS && everyDayIsLowSeason(rentalDates)) {
-    totalPrice *= 1 - LOW_SEASON_LONG_RENTAL_DISCOUNT;
-  }
-
-  return formatPrice(totalPrice);
+  return `$${amount.toFixed(2)}`;
 }
 
 function validateDriver(age, type, licenseYears) {
@@ -103,16 +98,12 @@ function calculateDailyPrice(date, type, age, licenseYears) {
   return dailyPrice;
 }
 
-function getRentalDays(pickupDate, dropoffDate) {
-  return getRentalDates(pickupDate, dropoffDate).length;
-}
-
 function getRentalDates(pickupDate, dropoffDate) {
   const startDate = createUtcDate(pickupDate);
   const endDate = createUtcDate(dropoffDate);
 
   if (startDate > endDate) {
-    throw new Error('Pickup date must be before or equal to dropoff date');
+    throw new Error("Pickup date must be before or equal to dropoff date");
   }
 
   const rentalDates = [];
@@ -126,33 +117,41 @@ function getRentalDates(pickupDate, dropoffDate) {
   return rentalDates;
 }
 
-function createUtcDate(value) {
-  const date = new Date(value);
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-}
-
-function getSeason(dateValue) {
-  const month = createUtcDate(dateValue).getUTCMonth();
-  const isHighSeasonMonth = month >= 3 && month <= 9;
-
-  return isHighSeasonMonth ? SEASONS.HIGH : SEASONS.LOW;
-}
-
-function isWeekend(dateValue) {
-  const day = createUtcDate(dateValue).getUTCDay();
-  return day === 0 || day === 6;
+function getRentalDays(pickupDate, dropoffDate) {
+  return getRentalDates(pickupDate, dropoffDate).length;
 }
 
 function everyDayIsLowSeason(rentalDates) {
   return rentalDates.every((date) => getSeason(date) === SEASONS.LOW);
 }
 
-function formatPrice(amount) {
-  if (Number.isInteger(amount)) {
-    return `$${amount}`;
+function price(
+  pickup,
+  dropoff,
+  pickupDate,
+  dropoffDate,
+  type,
+  age,
+  licenseYears = HIGH_SEASON_DAILY_FEE_LICENSE_YEARS
+) {
+  const validationMessage = validateDriver(age, type, licenseYears);
+
+  if (validationMessage) {
+    return validationMessage;
   }
 
-  return `$${amount.toFixed(2)}`;
+  const rentalDays = getRentalDays(pickupDate, dropoffDate);
+  const rentalDates = getRentalDates(pickupDate, dropoffDate);
+  const totalPrice = rentalDates.reduce(
+    (sum, rentalDate) => sum + calculateDailyPrice(rentalDate, type, age, licenseYears),
+    0
+  );
+
+  if (rentalDays > LONG_RENTAL_DISCOUNT_DAYS && everyDayIsLowSeason(rentalDates)) {
+    return formatPrice(totalPrice * (1 - LOW_SEASON_LONG_RENTAL_DISCOUNT));
+  }
+
+  return formatPrice(totalPrice);
 }
 
 module.exports = {
@@ -168,5 +167,5 @@ module.exports = {
   validateDriver,
   CAR_TYPES,
   MESSAGES,
-  SEASONS,
+  SEASONS
 };

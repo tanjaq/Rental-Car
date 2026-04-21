@@ -1,13 +1,13 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const rental = require('./rentalPrice');
+const express = require("express");
+const bodyParser = require("body-parser");
+const rental = require("./rentalPrice");
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.send(`
     <h1>Car Rental Booking Form</h1>
     <form method="post" action="/">
@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.post('/', (req, res) => {
+app.post("/", (req, res) => {
   const result = rental.price(
     String(req.body.pickup),
     String(req.body.dropoff),
@@ -64,12 +64,13 @@ app.post('/', (req, res) => {
     req.body.dropoffdate,
     String(req.body.type),
     Number(req.body.age),
-    Number(req.body.licenseYears),
+    Number(req.body.licenseYears)
   );
 
   res.send(`<h1>Rental price</h1><p>${result}</p><a href="/">Back</a>`);
 });
 
 app.listen(port, () => {
+  // eslint-disable-next-line no-console
   console.log(`Server listening at http://localhost:${port}`);
 });
