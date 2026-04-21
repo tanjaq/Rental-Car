@@ -145,10 +145,17 @@ function getWeekendDays(pickupDate, dropoffDate) {
 }
 
 function formatPrice(amount) {
-    if (!Number.isFinite(amount)) {
-        return "$0.00";
-    }
-    return "$" + amount.toFixed(2);
+  if (!Number.isFinite(amount)) {
+    return "$0";
+  }
+
+  const rounded = Math.round(amount * 100) / 100;
+
+  if (Number.isInteger(rounded)) {
+    return `$${rounded}`;
+  }
+
+  return `$${rounded.toFixed(2)}`;
 }
 
 exports.price = price;
