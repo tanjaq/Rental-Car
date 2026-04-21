@@ -1,4 +1,4 @@
-const rentalPrice = require("../rentalPrice.js");
+const rentalPrice = require("./rentalPrice.js");
 
 test("Rejects drivers under 18 years old", () => {
     const result = rentalPrice.price("2026-03-10", "2026-03-12", "Compact", 17, 3);
