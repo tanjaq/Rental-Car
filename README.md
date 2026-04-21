@@ -72,6 +72,6 @@ To solve the task, proceed as follows:
     * Example 2: 50 year old driver rents a car for three days: Thursday, Friday, Saturday - Total price $152.50
  
 * Töö jaotus: 
-   * Üks partneritest kirjutab testi. 
+   * Üks partneritest kirjutab testi.
    * Teine kirjutab koodi, et test läbi läheks.
 
