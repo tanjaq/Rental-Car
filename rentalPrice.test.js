@@ -1,77 +1,156 @@
-const { price } = require('./rentalPrice');
+const rental = require('./rentalPrice');
 
-describe('Rental Price Calculator', () => {
-  describe('calculateRentalPrice', () => {
-    test('should return error for age < 18', () => {
-      const result = price('pickup', 'dropoff', Date.now(), Date.now(), 'Compact', 17, 5);
-      expect(result).toBe('Driver too young - cannot quote the price');
-    });
+const { CAR_TYPES, MESSAGES, SEASONS } = rental;
 
-    test('should return error for license < 1 year', () => {
-      const result = price('pickup', 'dropoff', Date.now(), Date.now(), 'Compact', 20, 0);
-      expect(result).toBe("Driver's license held for less than 1 year - cannot quote the price");
-    });
+describe('validateDriver', () => {
+  test('returns message when driver is too young', () => {
+    expect(rental.validateDriver(17, CAR_TYPES.COMPACT, 3)).toBe(MESSAGES.TOO_YOUNG);
+  });
 
-    test('should return error for age <=21 and non-Compact', () => {
-      const result = price('pickup', 'dropoff', Date.now(), Date.now(), 'Racer', 20, 5);
-      expect(result).toBe('Drivers 21 y/o or less can only rent Compact vehicles');
-    });
+  test('returns message when license is newer than one year', () => {
+    expect(rental.validateDriver(30, CAR_TYPES.COMPACT, 0.5)).toBe(MESSAGES.LICENSE_TOO_NEW);
+  });
 
-    test('should calculate base price correctly', () => {
-      // Age 30, 1 day, Compact, license 5, low season (Nov)
-      const novDate = new Date(2023, 10, 1); // Nov 1
-      const result = price('pickup', 'dropoff', novDate.getTime(), novDate.getTime(), 'Compact', 30, 5);
-      expect(result).toBe('$30'); // 30 * 1
-    });
+  test('returns message when young driver tries to rent non compact car', () => {
+    expect(rental.validateDriver(21, CAR_TYPES.CABRIO, 3)).toBe(MESSAGES.ONLY_COMPACT);
+  });
 
-    test('should apply racer young multiplier in high season', () => {
-      const aprDate = new Date(2023, 3, 3); // Apr 3, Monday
-      const result = price('pickup', 'dropoff', aprDate.getTime(), aprDate.getTime(), 'Racer', 25, 5);
-      expect(result).toBe('$43.125'); // 25 * 1.5 * 1.15 = 43.125
-    });
+  test('returns null for valid driver', () => {
+    expect(rental.validateDriver(30, CAR_TYPES.ELECTRIC, 3)).toBeNull();
+  });
+});
 
-    test('should apply high season multiplier', () => {
-      const aprDate = new Date(2023, 3, 3);
-      const result = price('pickup', 'dropoff', aprDate.getTime(), aprDate.getTime(), 'Compact', 30, 5);
-      expect(result).toBe('$34.5'); // 30 * 1.15
-    });
+describe('date helpers', () => {
+  test('createUtcDate removes time part', () => {
+    const date = rental.createUtcDate('2026-04-10T15:44:12Z');
 
-    test('should apply long rental discount in low season', () => {
-      const novDate = new Date(2023, 10, 1);
-      const novDate11 = new Date(2023, 10, 11);
-      const result = price('pickup', 'dropoff', novDate.getTime(), novDate11.getTime(), 'Compact', 30, 5);
-      // Days: from Nov1 to Nov11: 11 days, 8 weekdays + 3 weekends = 240 + 94.5 = 334.5, low season, >10 days *0.9 = 301.05
-      expect(result).toBe('$301.05');
-    });
+    expect(date.toISOString()).toBe('2026-04-10T00:00:00.000Z');
+  });
 
-    test('should apply license <2 multiplier', () => {
-      const novDate = new Date(2023, 10, 1);
-      const result = price('pickup', 'dropoff', novDate.getTime(), novDate.getTime(), 'Compact', 30, 1);
-      expect(result).toBe('$39'); // 30 * 1.3
-    });
+  test('getRentalDates returns inclusive rental period', () => {
+    const rentalDates = rental.getRentalDates('2026-03-02', '2026-03-04');
 
-    test('should apply license <3 fee in high season', () => {
-      const aprDate = new Date(2023, 3, 3);
-      const result = price('pickup', 'dropoff', aprDate.getTime(), aprDate.getTime(), 'Compact', 30, 2);
-      expect(result).toBe('$49.5'); // 30 * 1.15 + 15 = 34.5 + 15 = 49.5
-    });
+    expect(rentalDates.map((date) => date.toISOString())).toEqual([
+      '2026-03-02T00:00:00.000Z',
+      '2026-03-03T00:00:00.000Z',
+      '2026-03-04T00:00:00.000Z',
+    ]);
+  });
 
-    test('should apply weekend pricing for weekdays only', () => {
-      // 3 days: Mon, Tue, Wed - all weekdays
-      const mon = new Date(2023, 10, 6); // Nov 6, 2023 Monday
-      const wed = new Date(2023, 10, 8);
-      const result = price('pickup', 'dropoff', mon.getTime(), wed.getTime(), 'Compact', 50, 5);
-      // 3 weekdays, low season, 50*3 = 150
-      expect(result).toBe('$150');
-    });
+  test('getRentalDates throws error when dates are reversed', () => {
+    expect(() => rental.getRentalDates('2026-03-05', '2026-03-04')).toThrow(
+      'Pickup date must be before or equal to dropoff date',
+    );
+  });
 
-    test('should apply weekend pricing with weekend days', () => {
-      // 3 days: Thu, Fri, Sat
-      const thu = new Date(2023, 10, 9); // Nov 9, 2023 Thursday
-      const sat = new Date(2023, 10, 11); // Nov 11 Saturday
-      const result = price('pickup', 'dropoff', thu.getTime(), sat.getTime(), 'Compact', 50, 5);
-      // Thu weekday, Fri weekday, Sat weekend: 2*50 + 1*50*1.05 = 100 + 52.5 = 152.5
-      expect(result).toBe('$152.5');
-    });
+  test('getRentalDays returns correct amount of days', () => {
+    expect(rental.getRentalDays('2026-03-02', '2026-03-04')).toBe(3);
+  });
+
+  test('getSeason returns low season', () => {
+    expect(rental.getSeason('2026-03-04')).toBe(SEASONS.LOW);
+  });
+
+  test('getSeason returns high season', () => {
+    expect(rental.getSeason('2026-04-04')).toBe(SEASONS.HIGH);
+  });
+
+  test('isWeekend returns true for saturday', () => {
+    expect(rental.isWeekend('2026-03-07')).toBe(true);
+  });
+
+  test('isWeekend returns false for monday', () => {
+    expect(rental.isWeekend('2026-03-02')).toBe(false);
+  });
+
+  test('everyDayIsLowSeason returns true when all dates are in low season', () => {
+    expect(
+      rental.everyDayIsLowSeason([
+        new Date('2026-03-01T00:00:00.000Z'),
+        new Date('2026-03-02T00:00:00.000Z'),
+      ]),
+    ).toBe(true);
+  });
+
+  test('everyDayIsLowSeason returns false when at least one date is in high season', () => {
+    expect(
+      rental.everyDayIsLowSeason([
+        new Date('2026-03-31T00:00:00.000Z'),
+        new Date('2026-04-01T00:00:00.000Z'),
+      ]),
+    ).toBe(false);
+  });
+});
+
+describe('formatPrice', () => {
+  test('returns integer price without decimals', () => {
+    expect(rental.formatPrice(150)).toBe('$150');
+  });
+
+  test('returns decimal price with two decimals', () => {
+    expect(rental.formatPrice(152.5)).toBe('$152.50');
+  });
+});
+
+describe('calculateDailyPrice', () => {
+  test('uses regular weekday price in low season', () => {
+    expect(rental.calculateDailyPrice('2026-03-02', CAR_TYPES.COMPACT, 50, 5)).toBe(50);
+  });
+
+  test('adds weekend surcharge', () => {
+    expect(rental.calculateDailyPrice('2026-03-07', CAR_TYPES.COMPACT, 50, 5)).toBe(52.5);
+  });
+
+  test('adds racer surcharge for young driver in high season', () => {
+    expect(rental.calculateDailyPrice('2026-04-06', CAR_TYPES.RACER, 25, 5)).toBe(43.125);
+  });
+
+  test('does not add racer surcharge in low season', () => {
+    expect(rental.calculateDailyPrice('2026-03-06', CAR_TYPES.RACER, 25, 5)).toBe(25);
+  });
+
+  test('adds 30 percent surcharge when license is less than two years', () => {
+    expect(rental.calculateDailyPrice('2026-03-04', CAR_TYPES.COMPACT, 20, 1.5)).toBe(26);
+  });
+
+  test('adds extra 15 euros in high season when license is less than three years', () => {
+    expect(rental.calculateDailyPrice('2026-04-06', CAR_TYPES.COMPACT, 20, 2.5)).toBe(38);
+  });
+});
+
+describe('price', () => {
+  test('returns validation message for underage driver', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-02', '2026-03-04', CAR_TYPES.COMPACT, 17, 5))
+      .toBe(MESSAGES.TOO_YOUNG);
+  });
+
+  test('returns validation message for new license holder', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-02', '2026-03-04', CAR_TYPES.COMPACT, 30, 0.8))
+      .toBe(MESSAGES.LICENSE_TOO_NEW);
+  });
+
+  test('calculates weekday rental like in TDD example', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-02', '2026-03-04', CAR_TYPES.COMPACT, 50, 5))
+      .toBe('$150');
+  });
+
+  test('calculates weekday and weekend rental like in TDD example', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-05', '2026-03-07', CAR_TYPES.COMPACT, 50, 5))
+      .toBe('$152.50');
+  });
+
+  test('applies low season discount for rentals longer than ten days', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-01', '2026-03-11', CAR_TYPES.COMPACT, 30, 5))
+      .toBe('$301.05');
+  });
+
+  test('does not apply long rental discount when at least one day is in high season', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-25', '2026-04-04', CAR_TYPES.COMPACT, 30, 5))
+      .toBe('$352.73');
+  });
+
+  test('uses default license years value for backward compatibility', () => {
+    expect(rental.price('Tallinn', 'Tartu', '2026-03-02', '2026-03-02', CAR_TYPES.COMPACT, 40))
+      .toBe('$40');
   });
 });
