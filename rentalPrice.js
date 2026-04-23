@@ -109,7 +109,7 @@ function validateRental(age, carClass, licenseYears) {
   }
 
   if (licenseYears < MINIMUM_LICENSE_YEARS) {
-    return "Driver must hold a license for at least 1 year";
+    return "Driver license held for less than a year - cannot rent";
   }
 
   return null;
@@ -130,10 +130,6 @@ function calculateRentalPrice({
   const weekendPrice = weekendDays * age * (1 + WEEKEND_SURCHARGE_RATE);
   let totalPrice = weekdayPrice + weekendPrice;
 
-  if (season === SEASONS.HIGH && licenseYears < HIGH_SEASON_DAILY_FEE_YEARS) {
-    totalPrice += rentalDays * HIGH_SEASON_NEW_DRIVER_DAILY_FEE;
-  }
-
   if (
     carClass === CAR_CLASSES.RACER
     && age <= RACER_SURCHARGE_AGE_LIMIT
@@ -144,6 +140,10 @@ function calculateRentalPrice({
 
   if (season === SEASONS.HIGH) {
     totalPrice *= 1 + HIGH_SEASON_SURCHARGE_RATE;
+  }
+
+  if (season === SEASONS.HIGH && licenseYears < HIGH_SEASON_DAILY_FEE_YEARS) {
+    totalPrice += rentalDays * HIGH_SEASON_NEW_DRIVER_DAILY_FEE;
   }
 
   if (season === SEASONS.LOW && rentalDays > LONG_RENTAL_DISCOUNT_DAYS) {

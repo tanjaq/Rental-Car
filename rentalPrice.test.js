@@ -118,7 +118,7 @@ describe("price", () => {
       0
     );
 
-    expect(result).toBe("Driver must hold a license for at least 1 year");
+    expect(result).toBe("Driver license held for less than a year - cannot rent");
   });
 
   test("adds 30 percent when the license is younger than two years", () => {
@@ -146,7 +146,7 @@ describe("price", () => {
       2
     );
 
-    expect(result).toBe("$155.25");
+    expect(result).toBe("$148.50");
   });
 
   test("adds the racer surcharge only in high season for drivers aged 25 or less", () => {
