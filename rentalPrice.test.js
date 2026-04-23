@@ -132,7 +132,7 @@ describe("price", () => {
       1
     );
 
-    expect(result).toBe("$39.00");
+    expect(result).toBe("$39");
   });
 
   test("adds 15 euros per day in high season when the license is younger than three years", () => {
@@ -188,7 +188,7 @@ describe("price", () => {
       5
     );
 
-    expect(result).toBe("$150.00");
+    expect(result).toBe("$150");
   });
 
   test("increases the total when the rental includes one weekend day in the TDD scenario", () => {
@@ -215,6 +215,6 @@ describe("price", () => {
       50
     );
 
-    expect(result).toBe("$150.00");
+    expect(result).toBe("$150");
   });
 });

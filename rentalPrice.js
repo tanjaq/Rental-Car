@@ -157,7 +157,9 @@ function calculateRentalPrice({
   return totalPrice;
 }
 function formatPrice(amount) {
-  return `$${amount.toFixed(2)}`;
+  const formattedAmount = amount.toFixed(2).replace(/\.00$/, "");
+
+  return `$${formattedAmount}`;
 }
 
 function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears = Infinity) {
