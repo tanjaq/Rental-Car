@@ -98,8 +98,13 @@
             </select>
 
             <div class="form-group">
-                <label for="age">Diver's age</label>
-                <input type="number" class="form-control" name="age" required/>
+                <label for="age">Driver's age</label>
+                <input type="number" class="form-control" id="age" name="age" min="18" required>
+            </div>
+
+            <div class="form-group">
+                <label for="license-years">Years with driver's license</label>
+                <input type="number" class="form-control" id="license-years" name="licenseYears" min="0" step="1" required>
             </div>
 
             <button type="submit" class="btn btn-primary">Search</button>
