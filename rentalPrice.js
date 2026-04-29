@@ -23,13 +23,29 @@ function calculatePrice(carType, driverAge, licenseDate, pickupDate, dropoffDate
         return validationError;
     }
     
-    let dailyPrice = driverAge;
+    let totalPrice = 0;
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-    if (licenseYears < 3 && season === SEASON.HIGH) {
-        dailyPrice += 15;
+    // Iterate through each day and calculate price
+    for (let i = 0; i < days; i++) {
+        // Calculate current date by adding milliseconds
+        const currentDateMs = pickupDate + (i * ONE_DAY_MS);
+        const currentDate = new Date(currentDateMs);
+
+        let dailyPrice = driverAge;
+
+        // Apply license-based daily surcharge during high season
+        if (licenseYears < 3 && season === SEASON.HIGH) {
+            dailyPrice += 15;
+        }
+
+        // Apply weekend multiplier
+        if (isWeekend(currentDate)) {
+            dailyPrice *= 1.05;
+        }
+
+        totalPrice += dailyPrice;
     }
-
-    let totalPrice = dailyPrice * days;
     
     if (season === SEASON.HIGH) {
         totalPrice *= 1.15;
@@ -75,6 +91,11 @@ function calculateYearsSince(date) {
     const diffMs = new Date() - new Date(date).getTime();
     const ageDate = new Date(diffMs);
     return Math.abs(ageDate.getUTCFullYear() - 1970);
+}
+
+function isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
 }
 
 function getSeason(pickupDate, dropoffDate) {
