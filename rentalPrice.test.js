@@ -11,7 +11,7 @@ test("under 18 cannot rent", () => {
 
 test("license <1 year fails", () => {
   expect(price("", "", Date.now(), Date.now(), "Compact", 25, 0.5))
-    .toBe("License less than 1 year - cannot rent");
+    .toBe("Driver license held for less than a year - cannot rent");
 });
 
 test("young driver only compact", () => {
@@ -32,7 +32,7 @@ test("weekend pricing", () => {
   const end = new Date("2026-05-07"); // Thu
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$172.50");
+    .toBe("$172.5");
 });
 
 test("license <2 years increases price", () => {

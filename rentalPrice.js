@@ -78,13 +78,13 @@ function hasHighSeasonDay(pickupDate, dropoffDate) {
 }
 
 function formatPrice(totalPrice) {
-  const roundedPrice = Number(totalPrice.toFixed(2));
+  const roundedPrice = Math.round((totalPrice + Number.EPSILON) * 100) / 100;
 
   if (Number.isInteger(roundedPrice)) {
     return `$${roundedPrice}`;
   }
 
-  return `$${roundedPrice.toFixed(2)}`;
+  return `$${roundedPrice}`;
 }
 
 function isLowSeasonRange(pickupDate, dropoffDate) {
@@ -105,7 +105,7 @@ function getValidationError(age, licenseYears, carClass) {
   }
 
   if (licenseYears < 1) {
-    return "License less than 1 year - cannot rent";
+    return "Driver license held for less than a year - cannot rent";
   }
 
   if (age <= COMPACT_ONLY_MAX_AGE && carClass !== CAR_CLASSES.COMPACT) {
@@ -184,11 +184,10 @@ function applyLongRentalDiscount(totalPrice, days, isRentalLowSeason) {
   return totalPrice;
 }
 
-function calculateBasePrice(pickupDate, days, age, licenseYears) {
+function calculateBasePrice(pickupDate, days, age) {
   let totalPrice = age * days;
 
   totalPrice += getWeekendFee(getDate(pickupDate), days, age);
-  totalPrice += getHighSeasonLicenseFee(getDate(pickupDate), days, licenseYears);
 
   return totalPrice;
 }
@@ -224,8 +223,9 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
   }
 
   const days = getRentalDays(pickupDate, dropoffDate);
-  const basePrice = calculateBasePrice(pickupDate, days, age, validLicenseYears);
-  const totalPrice = applyPriceModifiers(
+  const basePrice = calculateBasePrice(pickupDate, days, age);
+
+  let totalPrice = applyPriceModifiers(
     basePrice,
     carClass,
     age,
@@ -234,6 +234,8 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
     pickupDate,
     dropoffDate
   );
+
+  totalPrice += getHighSeasonLicenseFee(pickupDate, days, validLicenseYears);
 
   return formatPrice(totalPrice);
 }
