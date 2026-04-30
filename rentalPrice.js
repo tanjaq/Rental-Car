@@ -83,7 +83,7 @@ function isLowSeasonRange(pickupDate, dropoffDate) {
 
 function getLicenseYears(licenseYears) {
   if (Number.isNaN(licenseYears) || licenseYears === undefined) {
-    return 3;
+    return 10;
   }
 
   return licenseYears;
@@ -109,7 +109,9 @@ function getValidationError(age, licenseYears, carClass) {
   return null;
 }
 
-function getWeekendFee(pickupDate, days, age) {
+function getWeekendFee(pickupDate, days, age, isHighSeason) {
+  if (!isHighSeason) return 0;  // No weekend fee in low season
+  
   let weekendFee = 0;
   const startDate = getDate(pickupDate);
 
@@ -174,10 +176,11 @@ function applyLongRentalDiscount(totalPrice, days, isRentalLowSeason) {
   return totalPrice;
 }
 
-function calculateBasePrice(pickupDate, days, age, licenseYears) {
+function calculateBasePrice(pickupDate, dropoffDate, days, age, licenseYears) {
+  const isHighSeason = hasHighSeasonDay(pickupDate, dropoffDate);
   let totalPrice = age * days;
 
-  totalPrice += getWeekendFee(pickupDate, days, age);
+  totalPrice += getWeekendFee(pickupDate, days, age, isHighSeason);
   totalPrice += getHighSeasonLicenseFee(pickupDate, days, licenseYears);
 
   return totalPrice;
@@ -232,3 +235,5 @@ exports.price = price;
 exports.getRentalDays = getRentalDays;
 exports.isHighSeason = isHighSeason;
 exports.isWeekend = isWeekend;
+exports.getHighSeasonLicenseFee = getHighSeasonLicenseFee;
+exports.getWeekendFee = getWeekendFee;
