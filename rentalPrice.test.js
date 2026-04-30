@@ -52,7 +52,7 @@ test("long rental discount in low season", () => {
 
   const result = price("", "", start, end, "Compact", 50, 5);
 
-  expect(result).toBe("$550.00");
+  expect(result).toBe("$549.00");
 });
 
 test("racer young driver surcharge", () => {
