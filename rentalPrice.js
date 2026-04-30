@@ -1,75 +1,88 @@
+const HIGH_SEASON_START = 3;
+const HIGH_SEASON_END = 9;
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
-  const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
+function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) {
+  const days = getDays(pickupDate, dropoffDate);
 
   if (age < 18) {
-      return "Driver too young - cannot quote the price";
+    return "Driver too young - cannot quote the price";
   }
 
-  if (age <= 21 && clazz !== "Compact") {
-      return "Drivers 21 y/o or less can only rent Compact vehicles";
+  if (licenseYears < 1) {
+    return "License less than 1 year - cannot rent";
   }
 
-  let rentalprice = age * days;
-
-  if (clazz === "Racer" && age <= 25 && season === "High") {
-      rentalprice *= 1.5;
+  if (age <= 21 && type !== "Compact") {
+    return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
 
-  if (season === "High" ) {
-    rentalprice *= 1.15;
+  let total = 0;
+
+  for (let i = 0; i < days; i++) {
+    const date = addDays(new Date(pickupDate), i);
+    let daily = age;
+
+    if (isHighSeason(date)) {
+      daily *= 1.15;
+    }
+
+    if (type === "Racer" && age <= 25 && isHighSeason(date)) {
+      daily *= 1.5;
+    }
+
+    if (licenseYears < 2) {
+      daily *= 1.3;
+    }
+
+    if (licenseYears < 3 && isHighSeason(date)) {
+      daily += 15;
+    }
+
+    if (isWeekend(date)) {
+      daily *= 1.05;
+    }
+
+    total += Math.max(daily, age);
   }
 
-  if (days > 10 && season === "Low" ) {
-      rentalprice *= 0.9;
+  if (days > 10 && isLowSeasonRange(pickupDate, dropoffDate)) {
+    total *= 0.9;
   }
-  return '$' + rentalprice;
+
+  return "$" + total.toFixed(2);
 }
 
-function getClazz(type) {
-  switch (type) {
-      case "Compact":
-          return "Compact";
-      case "Electric":
-          return "Electric";
-      case "Cabrio":
-          return "Cabrio";
-      case "Racer":
-          return "Racer";
-      default:
-          return "Unknown";
-  }
+
+function getDays(start, end) {
+  const oneDay = 24 * 60 * 60 * 1000;
+  return Math.round(Math.abs((end - start) / oneDay)) + 1;
 }
 
-function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const firstDate = new Date(pickupDate);
-  const secondDate = new Date(dropoffDate);
-
-  return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
+function isHighSeason(date) {
+  const m = date.getMonth();
+  return m >= HIGH_SEASON_START && m <= HIGH_SEASON_END;
 }
 
-function getSeason(pickupDate, dropoffDate) {
-  const pickup = new Date(pickupDate);
-  const dropoff = new Date(dropoffDate);
+function isLowSeasonRange(start, end) {
+  const days = getDays(start, end);
 
-  const start = 4; 
-  const end = 10;
-
-  const pickupMonth = pickup.getMonth();
-  const dropoffMonth = dropoff.getMonth();
-
-  if (
-      (pickupMonth >= start && pickupMonth <= end) ||
-      (dropoffMonth >= start && dropoffMonth <= end) ||
-      (pickupMonth < start && dropoffMonth > end)
-  ) {
-      return "High";
-  } else {
-      return "Low";
+  for (let i = 0; i < days; i++) {
+    if (isHighSeason(addDays(new Date(start), i))) {
+      return false;
+    }
   }
+  return true;
+}
+
+function isWeekend(date) {
+  const d = date.getDay();
+  return d === 0 || d === 6;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
 }
 
 exports.price = price;
