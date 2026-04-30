@@ -110,7 +110,7 @@ function getValidationError(age, licenseYears, carClass) {
 }
 
 function getWeekendFee(pickupDate, days, age) {
-  if (!isHighSeason(pickupDate)) {
+  if (!isHighSeason(getDate(pickupDate))) {
     return 0;
   } // No weekend fee in low season
 
@@ -181,8 +181,8 @@ function applyLongRentalDiscount(totalPrice, days, isRentalLowSeason) {
 function calculateBasePrice(pickupDate, dropoffDate, days, age, licenseYears) {
   let totalPrice = age * days;
 
-  totalPrice += getWeekendFee(pickupDate, days, age);
-  totalPrice += getHighSeasonLicenseFee(pickupDate, days, licenseYears);
+  totalPrice += getWeekendFee(getDate(pickupDate), days, age);
+  totalPrice += getHighSeasonLicenseFee(getDate(pickupDate), days, licenseYears);
 
   return totalPrice;
 }
