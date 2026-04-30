@@ -110,10 +110,6 @@ function getValidationError(age, licenseYears, carClass) {
 }
 
 function getWeekendFee(pickupDate, days, age) {
-  if (!isHighSeason(getDate(pickupDate))) {
-    return 0;
-  } // No weekend fee in low season
-
   let weekendFee = 0;
   const startDate = getDate(pickupDate);
 
