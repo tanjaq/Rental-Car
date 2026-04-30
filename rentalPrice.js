@@ -77,6 +77,16 @@ function hasHighSeasonDay(pickupDate, dropoffDate) {
   return false;
 }
 
+function formatPrice(totalPrice) {
+  const roundedPrice = Number(totalPrice.toFixed(2));
+
+  if (Number.isInteger(roundedPrice)) {
+    return `$${roundedPrice}`;
+  }
+
+  return `$${roundedPrice.toFixed(2)}`;
+}
+
 function isLowSeasonRange(pickupDate, dropoffDate) {
   return !hasHighSeasonDay(pickupDate, dropoffDate);
 }
@@ -225,7 +235,7 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
     dropoffDate
   );
 
-  return `$${totalPrice.toFixed(2)}`;
+  return formatPrice(totalPrice);
 }
 
 exports.price = price;

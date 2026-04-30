@@ -24,7 +24,7 @@ test("weekday pricing", () => {
   const end = new Date("2026-03-04"); // Wed
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$150.00");
+    .toBe("$150");
 });
 
 test("weekend pricing", () => {
@@ -37,7 +37,7 @@ test("weekend pricing", () => {
 
 test("license <2 years increases price", () => {
   const result = price("", "", new Date("2026-05-01"), new Date("2026-05-01"), "Compact", 30, 1);
-  expect(result).not.toBe("$30.00");
+  expect(result).not.toBe("$30");
 });
 
 test("license <3 years adds 15 in high season", () => {
@@ -56,7 +56,7 @@ test("long rental discount in low season", () => {
 
   const result = price("", "", start, end, "Compact", 50, 5);
 
-  expect(result).toBe("$549.00");
+  expect(result).toBe("$549");
 });
 
 test("racer young driver surcharge", () => {
@@ -64,7 +64,7 @@ test("racer young driver surcharge", () => {
 
   const result = price("", "", start, start, "Racer", 24, 5);
 
-  expect(result).not.toBe("$24.00");
+  expect(result).not.toBe("$24");
 });
 
 test("no long rental discount in high season", () => {
@@ -73,7 +73,7 @@ test("no long rental discount in high season", () => {
 
   const result = price("", "", start, end, "Compact", 50, 5);
 
-  expect(result).not.toBe("$549.00");
+  expect(result).not.toBe("$549");
 });
 
 test("single day weekend price", () => {
@@ -89,7 +89,7 @@ test("uses default license years when license years is missing", () => {
   const end = new Date("2026-03-02");
 
   expect(price("", "", start, end, "Compact", 50))
-    .toBe("$50.00");
+    .toBe("$50");
 });
 
 test("low season short rental has no high season increase", () => {
@@ -97,7 +97,7 @@ test("low season short rental has no high season increase", () => {
   const end = new Date("2026-01-07");
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$150.00");
+    .toBe("$150");
 });
 
 test("adds 15€ per day in high season when license < 3", () => {
