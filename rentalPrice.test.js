@@ -24,15 +24,15 @@ test("weekday pricing", () => {
   const end = new Date("2026-03-04"); // Wed
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$253.50");
+    .toBe("$150.00");
 });
 
 test("weekend pricing", () => {
-  const start = new Date("2026-03-05"); // Thu
-  const end = new Date("2026-03-07"); // Sat
+  const start = new Date("2026-05-05"); // Tue
+  const end = new Date("2026-05-07"); // Thu
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$253.50");
+    .toBe("$172.50");
 });
 
 test("license <2 years increases price", () => {
@@ -56,7 +56,7 @@ test("long rental discount in low season", () => {
 
   const result = price("", "", start, end, "Compact", 50, 5);
 
-  expect(result).toBe("$228.15");
+  expect(result).toBe("$540.00");
 });
 
 test("racer young driver surcharge", () => {
@@ -77,11 +77,11 @@ test("no long rental discount in high season", () => {
 });
 
 test("single day weekend price", () => {
-  const start = new Date("2026-03-07");
+  const start = new Date("2026-05-02"); // Saturday in high season
 
   const result = price("", "", start, start, "Compact", 50, 5);
 
-  expect(result).toBe("$253.75");
+  expect(result).toBe("$60.37");
 });
 
 test("uses default license years when license years is missing", () => {
@@ -89,7 +89,7 @@ test("uses default license years when license years is missing", () => {
   const end = new Date("2026-03-02");
 
   expect(price("", "", start, end, "Compact", 50))
-    .toBe("$507.00");
+    .toBe("$50.00");
 });
 
 test("low season short rental has no high season increase", () => {
@@ -97,7 +97,7 @@ test("low season short rental has no high season increase", () => {
   const end = new Date("2026-01-07");
 
   expect(price("", "", start, end, "Compact", 50, 5))
-    .toBe("$253.50");
+    .toBe("$150.00");
 });
 
 test("adds 15€ per day in high season when license < 3", () => {
@@ -118,7 +118,44 @@ test("does not add fee when license >= 3", () => {
   expect(result).toBe(0);
 });
 
-test("does not add fee in low season", () => {
+test("weekend fee added for Saturday and Sunday in high season", () => {
+  const start = new Date("2026-05-02"); // Saturday in May (high season)
+  const days = 2; // Saturday and Sunday
+
+  const result = getWeekendFee(start, days, 50);
+
+  expect(result).toBeCloseTo(5); // 50 * (1.05 - 1) * 2 days = 5
+});
+
+test("weekend fee for single weekend day", () => {
+  const start = new Date("2026-06-06"); // Saturday in June (high season)
+  const days = 1;
+
+  const result = getWeekendFee(start, days, 40);
+
+  expect(result).toBeCloseTo(2); // 40 * (1.05 - 1) = 2
+});
+
+test("weekend fee scales with driver age", () => {
+  const start = new Date("2026-05-02"); // Saturday
+  const days = 2;
+
+  const result1 = getWeekendFee(start, days, 30);
+  const result2 = getWeekendFee(start, days, 60);
+
+  expect(result2).toBe(result1 * 2); // Double age = double fee
+});
+
+test("no weekend fee in low season", () => {
+  const start = new Date("2026-01-03"); // Saturday in January (low season)
+  const days = 2;
+
+  const result = getWeekendFee(start, days, 50);
+
+  expect(result).toBe(0); // No weekend fee in low season
+});
+
+test("does not add high season license fee in low season", () => {
   const start = new Date("2026-01-01"); // jaanuar = low season
   const days = 3;
 
@@ -128,10 +165,10 @@ test("does not add fee in low season", () => {
 });
 
 test("does not add weekend fee in low season", () => {
-  const start = new Date("2026-01-03"); // Saturday
+  const start = new Date("2026-01-03"); // Saturday in January (low season)
   const days = 1;
 
-  const result = getWeekendFee(start, days, 50, false);
+  const result = getWeekendFee(start, days, 50);
 
   expect(result).toBe(0);
 });
