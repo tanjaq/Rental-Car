@@ -184,7 +184,7 @@ function applyLongRentalDiscount(totalPrice, days, isRentalLowSeason) {
   return totalPrice;
 }
 
-function calculateBasePrice(pickupDate, dropoffDate, days, age, licenseYears) {
+function calculateBasePrice(pickupDate, days, age, licenseYears) {
   let totalPrice = age * days;
 
   totalPrice += getWeekendFee(getDate(pickupDate), days, age);
@@ -224,7 +224,7 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears
   }
 
   const days = getRentalDays(pickupDate, dropoffDate);
-  const basePrice = calculateBasePrice(pickupDate, dropoffDate, days, age, validLicenseYears);
+  const basePrice = calculateBasePrice(pickupDate, days, age, validLicenseYears);
   const totalPrice = applyPriceModifiers(
     basePrice,
     carClass,
