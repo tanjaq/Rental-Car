@@ -81,7 +81,7 @@ test("single day weekend price", () => {
 
   const result = price("", "", start, start, "Compact", 50, 5);
 
-  expect(result).toBe("$60.37");
+  expect(result).toBe("$60.38");
 });
 
 test("uses default license years when license years is missing", () => {

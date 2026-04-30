@@ -78,7 +78,7 @@ function hasHighSeasonDay(pickupDate, dropoffDate) {
 }
 
 function formatPrice(totalPrice) {
-  const roundedPrice = Math.round((totalPrice + Number.EPSILON) * 100) / 100;
+  const roundedPrice = Math.ceil(totalPrice * 100) / 100;
 
   if (Number.isInteger(roundedPrice)) {
     return `$${roundedPrice}`;
