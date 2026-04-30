@@ -10,7 +10,8 @@
         "jest": "^30.3.0"
     },
     "scripts": {
-        "test": "jest"
+        "test": "jest",
+        "lint": "eslint ."
     },
     "keywords": [],
     "author": "",
