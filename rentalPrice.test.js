@@ -52,7 +52,7 @@ test("long rental discount in low season", () => {
 
   const result = price("", "", start, end, "Compact", 50, 5);
 
-  expect(result).toBe("$549.00");
+  expect(result).toBe("$550.00");
 });
 
 test("racer young driver surcharge", () => {
@@ -86,4 +86,12 @@ test("uses default license years when license years is missing", () => {
 
   expect(price("", "", start, end, "Compact", 50))
     .toBe("$50.00");
+});
+
+test("low season short rental has no high season increase", () => {
+  const start = new Date("2026-01-05");
+  const end = new Date("2026-01-07");
+
+  expect(price("", "", start, end, "Compact", 50, 5))
+    .toBe("$150.00");
 });
