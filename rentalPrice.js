@@ -181,7 +181,7 @@ function applyLongRentalDiscount(totalPrice, days, isRentalLowSeason) {
 function calculateBasePrice(pickupDate, dropoffDate, days, age, licenseYears) {
   let totalPrice = age * days;
 
-  totalPrice += getWeekendFee(pickupDate, days, age, isHighSeason);
+  totalPrice += getWeekendFee(pickupDate, days, age);
   totalPrice += getHighSeasonLicenseFee(pickupDate, days, licenseYears);
 
   return totalPrice;
