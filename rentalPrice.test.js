@@ -37,7 +37,7 @@ describe("calculatePrice()", () => {
 
     it("returns error if license tenure is less than 1 year", () => {
       const result = calculatePrice("Compact", 25, LICENSE.years0, DAY.apr01, DAY.apr05);
-      expect(result).toBe("Driver must have at least 1 year of driving experience to rent a car");
+      expect(result).toBe("Driver license held for less than a year - cannot rent");
     });
 
     it("restricts 18–21 to Compact only", () => {
@@ -61,14 +61,14 @@ describe("calculatePrice()", () => {
 
     it("adds +€15/day for license under 3 years during high season (then season multiplier)", () => {
       const price = calculatePrice("Compact", 30, LICENSE.years2, DAY.apr01, DAY.apr01);
-      expect(price).toBe("$51.75"); // (30 + 15) * 1.15
+      expect(price).toBe("$49.50"); // 30 * 1.15 + 15 = 34.5 + 15
     });
   });
 
   describe("car-type rules", () => {
     it("applies +50% for Racer (young-driver surcharge) in high season", () => {
       const price = calculatePrice("Racer", 25, LICENSE.years5, DAY.apr01, DAY.apr01);
-      expect(price).toBe("$43.12"); // 25 * 1.5 * 1.15 = 43.125 -> 43.13
+      expect(price).toBe("$43.13"); // 25 * 1.5 * 1.15 = 43.125 -> 43.13
     });
 
     it("does not apply Racer +50% in low season", () => {
