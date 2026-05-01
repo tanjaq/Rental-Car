@@ -48,74 +48,74 @@ describe("calculatePrice()", () => {
 
   describe("pricing basics", () => {
     it("uses age as the minimum daily base", () => {
-      const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan01);
-      expect(price).toBe("$30.00");
+      const result = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan01);
+      expect(result).toBe("$30.00");
     });
   });
 
   describe("license-based adjustments", () => {
     it("adds 30% when license tenure is under 2 years", () => {
-      const price = calculatePrice("Compact", 20, LICENSE.years1, DAY.jan01, DAY.jan01);
-      expect(price).toBe("$26.00"); // 20 * 1.3
+      const result = calculatePrice("Compact", 20, LICENSE.years1, DAY.jan01, DAY.jan01);
+      expect(result).toBe("$26.00"); // 20 * 1.3
     });
 
     it(
       "adds +€15/day for license under 3 years during high season (then season multiplier)",
       () => {
-        const price = calculatePrice("Compact", 30, LICENSE.years2, DAY.apr01, DAY.apr01);
-        expect(price).toBe("$49.50"); // 30 * 1.15 + 15 = 34.5 + 15
+        const result = calculatePrice("Compact", 30, LICENSE.years2, DAY.apr01, DAY.apr01);
+        expect(result).toBe("$49.50"); // 30 * 1.15 + 15 = 34.5 + 15
       }
     );
   });
 
   describe("car-type rules", () => {
     it("applies +50% for Racer (young-driver surcharge) in high season", () => {
-      const price = calculatePrice("Racer", 25, LICENSE.years5, DAY.apr01, DAY.apr01);
-      expect(price).toBe("$43.13"); // 25 * 1.5 * 1.15 = 43.125 -> 43.13
+      const result = calculatePrice("Racer", 25, LICENSE.years5, DAY.apr01, DAY.apr01);
+      expect(result).toBe("$43.13"); // 25 * 1.5 * 1.15 = 43.125 -> 43.13
     });
 
     it("does not apply Racer +50% in low season", () => {
-      const price = calculatePrice("Racer", 25, LICENSE.years5, DAY.jan01, DAY.jan01);
-      expect(price).toBe("$25.00");
+      const result = calculatePrice("Racer", 25, LICENSE.years5, DAY.jan01, DAY.jan01);
+      expect(result).toBe("$25.00");
     });
   });
 
   describe("season / duration effects", () => {
     it("high season adds 15% to total", () => {
-      const price = calculatePrice("Compact", 20, LICENSE.years5, DAY.apr01, DAY.apr05);
-      expect(price).toBe("$115.00"); // 5*20*1.15
+      const result = calculatePrice("Compact", 20, LICENSE.years5, DAY.apr01, DAY.apr05);
+      expect(result).toBe("$115.00"); // 5*20*1.15
     });
 
     it("low-season discount applies only for rentals longer than 10 days", () => {
-      const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan19);
+      const result = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan19);
       // 15 weekdays*30 + 4 weekends*31.50 = 450 + 126 = 576; 576 * 0.9 = 518.40
-      expect(price).toBe("$518.40");
+      expect(result).toBe("$518.40");
     });
 
     it("no low-season discount when duration is 10 days or less", () => {
-      const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan10);
+      const result = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan10);
       // 8 weekdays*30 + 2 weekends*31.50 = 240 + 63 = 303 (no discount, not > 10)
-      expect(price).toBe("$303.00");
+      expect(result).toBe("$303.00");
     });
   });
 
   describe("weekend pricing", () => {
     it("weekday rental (Mon-Tue-Wed) charges regular rate", () => {
       // 50-year-old rents Jan 1-3 (Mon, Tue, Wed) = all weekdays
-      const price = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan01, DAY.jan03);
-      expect(price).toBe("$150.00"); // 50 * 3 = 150
+      const result = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan01, DAY.jan03);
+      expect(result).toBe("$150.00"); // 50 * 3 = 150
     });
 
     it("mixed weekday/weekend rental (Thu-Fri-Sat) adds 5% for weekend days", () => {
       // 50-year-old rents Jan 4-6 (Thu, Fri, Sat) = 2 weekdays + 1 weekend
-      const price = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan04, DAY.jan06);
-      expect(price).toBe("$152.50"); // 50 + 50 + (50 * 1.05) = 152.50
+      const result = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan04, DAY.jan06);
+      expect(result).toBe("$152.50"); // 50 + 50 + (50 * 1.05) = 152.50
     });
 
     it("full weekend rental (Sat-Sun) applies 5% for both days", () => {
       // 50-year-old rents Jan 6-7 (Sat, Sun)
-      const price = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan06, DAY.jan06);
-      expect(price).toBe("$52.50"); // 50 * 1.05 = 52.50
+      const result = calculatePrice("Compact", 50, LICENSE.years5, DAY.jan06, DAY.jan06);
+      expect(result).toBe("$52.50"); // 50 * 1.05 = 52.50
     });
 
     it("weekend pricing applies correctly with license surcharge", () => {
@@ -123,8 +123,8 @@ describe("calculatePrice()", () => {
       // Daily: (30) * 1.05 (Sat) or 30 (Thu, Fri)
       // Total before multiplier: 30 + 30 + 31.50 = 91.50
       // With 30% license surcharge: 91.50 * 1.3 = 118.95
-      const price = calculatePrice("Compact", 30, LICENSE.years1, DAY.jan04, DAY.jan06);
-      expect(price).toBe("$118.95");
+      const result = calculatePrice("Compact", 30, LICENSE.years1, DAY.jan04, DAY.jan06);
+      expect(result).toBe("$118.95");
     });
 
     it("weekend pricing applies correctly with season multiplier", () => {
