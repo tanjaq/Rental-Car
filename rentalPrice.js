@@ -60,6 +60,44 @@ function getSeason(pickupDate, dropoffDate) {
   }
   return SEASON.LOW;
 }
+
+function calculateBaseDailyPrice(age, currentDate) {
+  let dailyPrice = age;
+  if (isWeekend(currentDate)) {
+    dailyPrice *= 1.05;
+  }
+  return dailyPrice;
+}
+
+function applyLicenseSurcharges(totalPrice, licenseYears) {
+  let result = totalPrice;
+  if (licenseYears < 2) {
+    result *= 1.3;
+  }
+  return result;
+}
+
+function applyRacerSurcharge(totalPrice, type, age, season) {
+  if (type === CAR_CLASSES.RACER && age <= 25 && season === SEASON.HIGH) {
+    return totalPrice * 1.5;
+  }
+  return totalPrice;
+}
+
+function applySeasonAndDiscounts(totalPrice, season, licenseYears, days) {
+  let result = totalPrice;
+  if (season === SEASON.HIGH) {
+    result *= 1.15;
+  }
+  if (licenseYears < 3 && season === SEASON.HIGH) {
+    result += 15 * days;
+  }
+  if (days > 10 && season === SEASON.LOW) {
+    result *= 0.9;
+  }
+  return result;
+}
+
 // Core pricing logic that works with licenseYears directly
 function calculatePriceInternal(type, age, licenseYears, pickupDate, dropoffDate) {
   // Parse dates to milliseconds if they're strings
@@ -79,44 +117,14 @@ function calculatePriceInternal(type, age, licenseYears, pickupDate, dropoffDate
 
   // Iterate through each day and calculate price
   for (let i = 0; i < days; i += 1) {
-    // Calculate current date by adding milliseconds
     const currentDateMs = pickupMs + (i * ONE_DAY_MS);
     const currentDate = new Date(currentDateMs);
-
-    let dailyPrice = age;
-
-    // Apply weekend multiplier
-    if (isWeekend(currentDate)) {
-      dailyPrice *= 1.05;
-    }
-
-    totalPrice += dailyPrice;
+    totalPrice += calculateBaseDailyPrice(age, currentDate);
   }
 
-  // Apply license surcharge multiplier (for license < 2 years)
-  if (licenseYears < 2) {
-    totalPrice *= 1.3;
-  }
-
-  // Apply racer surcharge before season multiplier
-  if (type === CAR_CLASSES.RACER && age <= 25 && season === SEASON.HIGH) {
-    totalPrice *= 1.5;
-  }
-
-  // Apply season multiplier after surcharges
-  if (season === SEASON.HIGH) {
-    totalPrice *= 1.15;
-  }
-
-  // Apply license-based daily surcharge after season multiplier (not multiplicative)
-  if (licenseYears < 3 && season === SEASON.HIGH) {
-    totalPrice += 15 * days;
-  }
-
-  // Apply low season discount
-  if (days > 10 && season === SEASON.LOW) {
-    totalPrice *= 0.9;
-  }
+  totalPrice = applyLicenseSurcharges(totalPrice, licenseYears);
+  totalPrice = applyRacerSurcharge(totalPrice, type, age, season);
+  totalPrice = applySeasonAndDiscounts(totalPrice, season, licenseYears, days);
 
   return `$${totalPrice.toFixed(2)}`;
 }

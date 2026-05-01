@@ -59,10 +59,13 @@ describe("calculatePrice()", () => {
       expect(price).toBe("$26.00"); // 20 * 1.3
     });
 
-    it("adds +€15/day for license under 3 years during high season (then season multiplier)", () => {
-      const price = calculatePrice("Compact", 30, LICENSE.years2, DAY.apr01, DAY.apr01);
-      expect(price).toBe("$49.50"); // 30 * 1.15 + 15 = 34.5 + 15
-    });
+    it(
+      "adds +€15/day for license under 3 years during high season (then season multiplier)",
+      () => {
+        const price = calculatePrice("Compact", 30, LICENSE.years2, DAY.apr01, DAY.apr01);
+        expect(price).toBe("$49.50"); // 30 * 1.15 + 15 = 34.5 + 15
+      }
+    );
   });
 
   describe("car-type rules", () => {
@@ -85,12 +88,14 @@ describe("calculatePrice()", () => {
 
     it("low-season discount applies only for rentals longer than 10 days", () => {
       const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan19);
-      expect(price).toBe("$518.40"); // 15 weekdays*30 + 4 weekends*31.50 = 450 + 126 = 576; 576 * 0.9 = 518.40
+      // 15 weekdays*30 + 4 weekends*31.50 = 450 + 126 = 576; 576 * 0.9 = 518.40
+      expect(price).toBe("$518.40");
     });
 
     it("no low-season discount when duration is 10 days or less", () => {
       const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.jan01, DAY.jan10);
-      expect(price).toBe("$303.00"); // 8 weekdays*30 + 2 weekends*31.50 = 240 + 63 = 303 (no discount, not > 10)
+      // 8 weekdays*30 + 2 weekends*31.50 = 240 + 63 = 303 (no discount, not > 10)
+      expect(price).toBe("$303.00");
     });
   });
 
