@@ -1,4 +1,4 @@
-const { calculatePrice } = require("./rentalPrice");
+const { calculatePrice, price } = require("./rentalPrice");
 
 describe("calculatePrice()", () => {
   const d = (iso) => Date.parse(iso);
@@ -132,8 +132,20 @@ describe("calculatePrice()", () => {
       // Daily: (30) * 1.05 (Sat) or 30 (Thu, Fri)
       // Total before season: 30 + 30 + 31.50 = 91.50
       // With 15% high season: 91.50 * 1.15 = 105.225 -> 105.22 (floats)
-      const price = calculatePrice("Compact", 30, LICENSE.years5, DAY.apr04, DAY.apr06);
-      expect(price).toBe("$105.22");
+      const priceResult = calculatePrice("Compact", 30, LICENSE.years5, DAY.apr04, DAY.apr06);
+      expect(priceResult).toBe("$105.22");
+    });
+  });
+
+  describe("price() function", () => {
+    it("calls price function with correct signature", () => {
+      const priceResult = price(null, null, DAY.apr01, DAY.apr01, "Compact", 30, 5);
+      expect(priceResult).toBe("$34.50");
+    });
+
+    it("handles string date parameters", () => {
+      const priceResult = price(null, null, "2024-04-01", "2024-04-01", "Compact", 30, 5);
+      expect(priceResult).toBe("$34.50");
     });
   });
 });
