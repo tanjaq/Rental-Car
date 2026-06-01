@@ -1,37 +1,30 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const rental = require('./rentalPrice');
-const fs = require('fs');
+const express = require("express");
+const bodyParser = require("body-parser");
+const fs = require("fs");
+const { price } = require("./rentalPrice");
 
 const app = express();
-const port = 3000;
-
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.use(express.static('public'));
-app.use('/pictures', express.static('images'));
+const form = fs.readFileSync("form.html", "utf8");
+const resultHtml = fs.readFileSync("result.html", "utf8");
 
-const formHtml = fs.readFileSync('form.html', 'utf8');
-const resultHtml = fs.readFileSync('result.html', 'utf8');
+app.get("/", (req, res) => {
+    res.send(form);
+});
 
-app.post('/', (req, res) => {
-    const post = req.body;
-    const result = rental.price(
-        String(post.pickup),
-        String(post.dropoff),
-        Date.parse(post.pickupdate),
-        Date.parse(post.dropoffdate),
-        String(post.type),
-        Number(post.age)
+app.post("/", (req, res) => {
+    const result = price(
+        "",
+        "",
+        new Date(req.body.pickupdate),
+        new Date(req.body.dropoffdate),
+        req.body.type,
+        Number(req.body.age),
+        Number(req.body.licenseYears)
     );
-    res.send(formHtml + resultHtml.replaceAll('$0', result));
+
+    res.send(resultHtml.replace("$0", result));
 });
 
-app.get('/', (req, res) => {
-    res.send(formHtml);
-});
-
-// Start the server
-app.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-});
+app.listen(3000, () => console.log("Running on http://localhost:3000"));
