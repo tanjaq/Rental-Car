@@ -10,8 +10,9 @@
         "jest": "^30.2.0"
     },
     "scripts": {
-        "test": "jest"
-    },
+  "test": "jest",
+  "coverage": "jest --coverage"
+},
     "keywords": [],
     "author": "",
     "license": "ISC",

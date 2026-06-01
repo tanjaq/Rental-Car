@@ -58,4 +58,45 @@ describe('Rental Price Calculation - 8 Core Business Rules', () => {
         expect(result).toBe('$249.23');
     });
 
+    test('rejects unknown vehicle type', () => {
+        const result = rental.price(
+            'Tallinn',
+            'Tartu',
+            new Date('2026-06-01'),
+            new Date('2026-06-03'),
+            'tank',
+            25,
+            3
+        );
+
+        expect(result).toContain('Unknown');
+    });
+
+    test('handles missing licenseYears', () => {
+        const result = rental.price(
+            'Tallinn',
+            'Tartu',
+            new Date('2026-06-01'),
+            new Date('2026-06-03'),
+            'compact',
+            30
+        );
+
+        expect(result).toMatch(/\$/);
+    });
+
+    test('rounds result to 2 decimals', () => {
+        const result = rental.price(
+            'Tallinn',
+            'Tartu',
+            new Date('2026-06-01'),
+            new Date('2026-06-03'),
+            'compact',
+            33,
+            3
+        );
+
+        expect(result).toMatch(/\.\d{2}$|^\$?\d+$/);
+    });
+
 });
