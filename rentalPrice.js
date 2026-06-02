@@ -1,4 +1,4 @@
-//Constants
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CAR_CLASSES = ["Compact", "Electric", "Cabrio", "Racer"];
 
@@ -17,10 +17,10 @@ const LONG_RENTAL_MIN_DAYS = 10;
 const LICENSE_YEARS_SURCHARGE_THRESHOLD = 2;
 const LICENSE_YEARS_HIGH_SEASON_SURCHARGE_THRESHOLD = 3;
 
-const HIGH_SEASON_START_MONTH = 3; // April (0-indexed)
-const HIGH_SEASON_END_MONTH = 9;   // October (0-indexed)
+const HIGH_SEASON_START_MONTH = 3;
+const HIGH_SEASON_END_MONTH = 9;
 
-//Validation
+// ─── Validation ───────────────────────────────────────────────────────────────
 
 function validateRentalEligibility(age, carClass, licenseYears) {
   if (age < MIN_RENTAL_AGE) {
@@ -39,17 +39,17 @@ function validateRentalEligibility(age, carClass, licenseYears) {
     return "Driver must hold a license for at least 1 year";
   }
 
-  return null; // eligible
+  return null;
 }
 
-//Season
+// ─── Season ───────────────────────────────────────────────────────────────────
 
 function isHighSeason(date) {
   const month = new Date(date).getMonth();
   return month >= HIGH_SEASON_START_MONTH && month <= HIGH_SEASON_END_MONTH;
 }
 
-//Days
+// ─── Days ─────────────────────────────────────────────────────────────────────
 
 function calculateRentalDays(pickupDate, dropoffDate) {
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -58,44 +58,44 @@ function calculateRentalDays(pickupDate, dropoffDate) {
   return Math.round(Math.abs((dropoff - pickup) / MS_PER_DAY)) + 1;
 }
 
-//Price modifiers 
+// ─── Price modifiers ──────────────────────────────────────────────────────────
 
-function applyRacerYoungDriverSurcharge(price, carClass, age, highSeason) {
+function applyRacerYoungDriverSurcharge(rentalPrice, carClass, age, highSeason) {
   if (carClass === "Racer" && age <= MAX_AGE_RACER_SURCHARGE && highSeason) {
-    return price * RACER_YOUNG_DRIVER_MULTIPLIER;
+    return rentalPrice * RACER_YOUNG_DRIVER_MULTIPLIER;
   }
-  return price;
+  return rentalPrice;
 }
 
-function applyHighSeasonSurcharge(price, highSeason) {
+function applyHighSeasonSurcharge(rentalPrice, highSeason) {
   if (highSeason) {
-    return price * HIGH_SEASON_MULTIPLIER;
+    return rentalPrice * HIGH_SEASON_MULTIPLIER;
   }
-  return price;
+  return rentalPrice;
 }
 
-function applyLongRentalDiscount(price, days, highSeason) {
+function applyLongRentalDiscount(rentalPrice, days, highSeason) {
   if (days > LONG_RENTAL_MIN_DAYS && !highSeason) {
-    return price * LONG_RENTAL_DISCOUNT;
+    return rentalPrice * LONG_RENTAL_DISCOUNT;
   }
-  return price;
+  return rentalPrice;
 }
 
-function applyInexperiencedDriverSurcharge(price, licenseYears, highSeason) {
+function applyInexperiencedDriverSurcharge(rentalPrice, licenseYears) {
   if (licenseYears < LICENSE_YEARS_SURCHARGE_THRESHOLD) {
-    price *= INEXPERIENCED_DRIVER_MULTIPLIER;
+    return rentalPrice * INEXPERIENCED_DRIVER_MULTIPLIER;
   }
-  return price;
+  return rentalPrice;
 }
 
-function applyInexperiencedDriverHighSeasonSurcharge(price, licenseYears, days, highSeason) {
+function applyInexperiencedDriverHighSeasonSurcharge(rentalPrice, licenseYears, days, highSeason) {
   if (licenseYears < LICENSE_YEARS_HIGH_SEASON_SURCHARGE_THRESHOLD && highSeason) {
-    price += INEXPERIENCED_DRIVER_HIGH_SEASON_SURCHARGE * days;
+    return rentalPrice + INEXPERIENCED_DRIVER_HIGH_SEASON_SURCHARGE * days;
   }
-  return price;
+  return rentalPrice;
 }
 
-//Main function
+// ─── Main function ────────────────────────────────────────────────────────────
 
 function calculatePrice(pickupDate, dropoffDate, carClass, age, licenseYears) {
   const eligibilityError = validateRentalEligibility(age, carClass, licenseYears);
@@ -111,13 +111,14 @@ function calculatePrice(pickupDate, dropoffDate, carClass, age, licenseYears) {
   rentalPrice = applyRacerYoungDriverSurcharge(rentalPrice, carClass, age, highSeason);
   rentalPrice = applyHighSeasonSurcharge(rentalPrice, highSeason);
   rentalPrice = applyLongRentalDiscount(rentalPrice, days, highSeason);
-  rentalPrice = applyInexperiencedDriverSurcharge(rentalPrice, licenseYears, highSeason);
-  rentalPrice = applyInexperiencedDriverHighSeasonSurcharge(rentalPrice, licenseYears, days, highSeason);
+  rentalPrice = applyInexperiencedDriverSurcharge(rentalPrice, licenseYears);
+  const args = [rentalPrice, licenseYears, days, highSeason];
+  rentalPrice = applyInexperiencedDriverHighSeasonSurcharge(...args);
 
-  return '$' + rentalPrice.toFixed(2);
+  return `$${rentalPrice.toFixed(2)}`;
 }
 
-//Exports 
+// ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
   calculatePrice,
@@ -128,5 +129,5 @@ module.exports = {
   applyHighSeasonSurcharge,
   applyLongRentalDiscount,
   applyInexperiencedDriverSurcharge,
-  applyInexperiencedDriverHighSeasonSurcharge,
+  applyInexperiencedDriverHighSeasonSurcharge
 };
