@@ -1,0 +1,90 @@
+const { calculatePrice } = require("../rentalPrice");
+
+describe("Car rental pricing", () => {
+
+    const APRIL_1 = Date.parse("2024-04-01");
+    const APRIL_5 = Date.parse("2024-04-05");
+    const JAN_1 = Date.parse("2024-01-01");
+
+    // ===== Validation tests =====
+
+    test("Rejects drivers under 18", () => {
+        expect(() =>
+            calculatePrice(APRIL_1, APRIL_5, "Compact", 17, 5)
+        ).toThrow("Driver too young");
+    });
+
+    test("Rejects drivers with license less than 1 year", () => {
+        expect(() =>
+            calculatePrice(APRIL_1, APRIL_5, "Compact", 25, 0)
+        ).toThrow("Driver's license held for less than one year");
+    });
+
+    test("Drivers aged 18–21 can only rent Compact cars", () => {
+        expect(() =>
+            calculatePrice(APRIL_1, APRIL_5, "Racer", 20, 3)
+        ).toThrow("Drivers aged 18–21 can only rent Compact cars");
+    });
+
+    // ===== Base pricing =====
+
+    test("Minimum daily price equals driver age", () => {
+        const result = calculatePrice(JAN_1, JAN_1, "Compact", 30, 5);
+        expect(result).toBe("$30.00");
+    });
+
+    // ===== License rules =====
+
+    test("License < 2 years increases price by 30%", () => {
+        const result = calculatePrice(JAN_1, JAN_1, "Compact", 20, 1);
+        expect(result).toBe("$26.00");
+    });
+
+    test("License < 3 years adds fee in high season", () => {
+        const result = calculatePrice(APRIL_1, APRIL_1, "Compact", 30, 2);
+
+        // 30 + 15 = 45, *1.15 = 51.75
+        expect(result).toBe("$51.75");
+    });
+
+    // ===== Racer rules =====
+
+    test("Racer with young driver gets increase in high season", () => {
+        const result = calculatePrice(APRIL_1, APRIL_1, "Racer", 25, 5);
+
+        expect(result).toBe("$43.13");
+    });
+
+    test("Racer does NOT get increase in low season", () => {
+        const result = calculatePrice(JAN_1, JAN_1, "Racer", 25, 5);
+
+        expect(result).toBe("$25.00");
+    });
+
+    // ===== Season rules =====
+
+    test("High season increases total price", () => {
+        const result = calculatePrice(APRIL_1, APRIL_5, "Compact", 20, 5);
+
+        expect(result).toBe("$115.00");
+    });
+
+    test("Low season discount applies for long rentals", () => {
+        const start = Date.parse("2024-01-01");
+        const end = Date.parse("2024-01-19");
+
+        const result = calculatePrice(start, end, "Compact", 30, 5);
+
+        expect(result).toBe("$518.40");
+    });
+
+    test("No discount for short rentals", () => {
+        const start = Date.parse("2024-01-01");
+        const end = Date.parse("2024-01-10");
+
+        const result = calculatePrice(start, end, "Compact", 30, 5);
+
+        expect(result).toBe("$303.00");
+    });
+
+});
