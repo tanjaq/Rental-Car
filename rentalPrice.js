@@ -46,7 +46,14 @@ function calculatePrice(
         totalPrice += dailyPrice;
     }
 
-    totalPrice = applySeasonRules(totalPrice, season, rentalDays);
+    // IMPORTANT: season multiplier only once (as tests expect)
+    if (season === "High") {
+        totalPrice *= HIGH_SEASON_INCREASE;
+    }
+
+    if (season === "Low" && rentalDays > 10) {
+        totalPrice *= LONG_RENTAL_DISCOUNT;
+    }
 
     return `$${totalPrice.toFixed(2)}`;
 }
@@ -90,18 +97,6 @@ function applyLicenseRules(price, licenseYears, season) {
     }
 
     return result;
-}
-
-function applySeasonRules(totalPrice, season, days) {
-    if (season === "High") {
-        return totalPrice * HIGH_SEASON_INCREASE;
-    }
-
-    if (season === "Low" && days > 10) {
-        return totalPrice * LONG_RENTAL_DISCOUNT;
-    }
-
-    return totalPrice;
 }
 
 // ===== Helpers =====

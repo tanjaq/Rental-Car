@@ -40,31 +40,36 @@ describe("Car rental pricing", () => {
         expect(result).toBe("$26.00");
     });
 
-    test("License < 3 years adds €15/day during high season", () => {
+    test("License < 3 years adds fee in high season", () => {
         const result = calculatePrice(APRIL_1, APRIL_1, "Compact", 30, 2);
+
+        // 30 + 15 = 45, *1.15 = 51.75
         expect(result).toBe("$51.75");
     });
 
     // ===== Racer rules =====
 
-    test("Racer with young driver gets 50% increase in high season", () => {
+    test("Racer with young driver gets increase in high season", () => {
         const result = calculatePrice(APRIL_1, APRIL_1, "Racer", 25, 5);
+
         expect(result).toBe("$43.13");
     });
 
-    test("Racer does NOT get 50% increase in low season", () => {
+    test("Racer does NOT get increase in low season", () => {
         const result = calculatePrice(JAN_1, JAN_1, "Racer", 25, 5);
+
         expect(result).toBe("$25.00");
     });
 
     // ===== Season rules =====
 
-    test("High season increases total price by 15%", () => {
+    test("High season increases total price", () => {
         const result = calculatePrice(APRIL_1, APRIL_5, "Compact", 20, 5);
+
         expect(result).toBe("$115.00");
     });
 
-    test("Low season discount applies for rentals over 10 days", () => {
+    test("Low season discount applies for long rentals", () => {
         const start = Date.parse("2024-01-01");
         const end = Date.parse("2024-01-19");
 
@@ -73,7 +78,7 @@ describe("Car rental pricing", () => {
         expect(result).toBe("$518.40");
     });
 
-    test("No low-season discount if rental is 10 days or less", () => {
+    test("No discount for short rentals", () => {
         const start = Date.parse("2024-01-01");
         const end = Date.parse("2024-01-10");
 
