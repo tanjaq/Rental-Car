@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const rental = require('./rentalPrice');
-const fs = require('fs');
+const fs = require("fs");
 
 const app = express();
 const port = 3000;
