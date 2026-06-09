@@ -3,8 +3,8 @@ const MIN_RENTAL_AGE = 18;
 const COMPACT_ONLY_MAX_AGE = 21;
 const RACER_YOUNG_DRIVER_MAX_AGE = 25;
 
-const HIGH_SEASON_START_MONTH = 3; // April
-const HIGH_SEASON_END_MONTH = 9;   // October
+const HIGH_SEASON_START_MONTH = 3;
+const HIGH_SEASON_END_MONTH = 9;
 
 const HIGH_SEASON_INCREASE = 1.15;
 const LONG_RENTAL_DISCOUNT = 0.9;
@@ -66,7 +66,7 @@ function validateDriver(age, carType, licenseYears) {
     }
 }
 
-// ===== Pricing Rules =====
+// ===== Rules =====
 function applyCarRules(price, carType, age, season) {
     if (
         carType === "Racer" &&
@@ -118,11 +118,10 @@ function isWeekend(date) {
 function determineSeason(start) {
     const month = new Date(start).getMonth();
 
-    if (month >= HIGH_SEASON_START_MONTH && month <= HIGH_SEASON_END_MONTH) {
-        return "High";
-    }
-
-    return "Low";
+    return (month >= HIGH_SEASON_START_MONTH &&
+            month <= HIGH_SEASON_END_MONTH)
+        ? "High"
+        : "Low";
 }
 
 module.exports = { calculatePrice };
