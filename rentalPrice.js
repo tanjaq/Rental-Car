@@ -1,10 +1,9 @@
-
 // ===== Constants =====
 const MIN_RENTAL_AGE = 18;
 const COMPACT_ONLY_MAX_AGE = 21;
 const RACER_YOUNG_DRIVER_MAX_AGE = 25;
 
-const HIGH_SEASON_START_MONTH = 3; // April (0-based)
+const HIGH_SEASON_START_MONTH = 3; // April
 const HIGH_SEASON_END_MONTH = 9;   // October
 
 const HIGH_SEASON_INCREASE = 1.15;
@@ -27,7 +26,7 @@ function calculatePrice(
     validateDriver(driverAge, carType, licenseYears);
 
     const rentalDays = calculateDays(pickupDate, dropoffDate);
-    const season = determineSeason(pickupDate, dropoffDate);
+    const season = determineSeason(pickupDate);
 
     let totalPrice = 0;
 
@@ -35,16 +34,11 @@ function calculatePrice(
         const currentDate = new Date(pickupDate);
         currentDate.setDate(currentDate.getDate() + i);
 
-        // 1️⃣ Base minimum daily price
         let dailyPrice = driverAge;
 
-        // 2️⃣ License rules (daily)
         dailyPrice = applyLicenseRules(dailyPrice, licenseYears, season);
-
-        // 3️⃣ Car-specific rules (daily)
         dailyPrice = applyCarRules(dailyPrice, carType, driverAge, season);
 
-        // 4️⃣ Weekend rule (daily)
         if (isWeekend(currentDate)) {
             dailyPrice *= WEEKEND_INCREASE;
         }
@@ -52,17 +46,15 @@ function calculatePrice(
         totalPrice += dailyPrice;
     }
 
-    // 5️⃣ Season & long-rental rules (TOTAL)
     totalPrice = applySeasonRules(totalPrice, season, rentalDays);
 
     return `$${totalPrice.toFixed(2)}`;
 }
 
-
 // ===== Validation =====
 function validateDriver(age, carType, licenseYears) {
     if (age < MIN_RENTAL_AGE) {
-        throw new Error("Driver too young - cannot quote the price");
+        throw new Error("Driver too young");
     }
 
     if (licenseYears < 1) {
@@ -87,17 +79,17 @@ function applyCarRules(price, carType, age, season) {
 }
 
 function applyLicenseRules(price, licenseYears, season) {
-    let adjustedPrice = price;
+    let result = price;
 
     if (licenseYears < 2) {
-        adjustedPrice *= LICENSE_UNDER_2_YEARS_INCREASE;
+        result *= LICENSE_UNDER_2_YEARS_INCREASE;
     }
 
     if (licenseYears < 3 && season === "High") {
-        adjustedPrice += LICENSE_HIGH_SEASON_DAILY_FEE;
+        result += LICENSE_HIGH_SEASON_DAILY_FEE;
     }
 
-    return adjustedPrice;
+    return result;
 }
 
 function applySeasonRules(totalPrice, season, days) {
@@ -120,20 +112,17 @@ function calculateDays(start, end) {
 
 function isWeekend(date) {
     const day = new Date(date).getDay();
-    return day === 0 || day === 6; // Sunday or Saturday
+    return day === 0 || day === 6;
 }
 
-function determineSeason(start, end) {
-    const startMonth = new Date(start).getMonth();
-    const endMonth = new Date(end).getMonth();
+function determineSeason(start) {
+    const month = new Date(start).getMonth();
 
-    const isHigh =
-        (startMonth >= HIGH_SEASON_START_MONTH &&
-            startMonth <= HIGH_SEASON_END_MONTH) ||
-        (endMonth >= HIGH_SEASON_START_MONTH &&
-            endMonth <= HIGH_SEASON_END_MONTH);
+    if (month >= HIGH_SEASON_START_MONTH && month <= HIGH_SEASON_END_MONTH) {
+        return "High";
+    }
 
-    return isHigh ? "High" : "Low";
+    return "Low";
 }
 
 module.exports = { calculatePrice };
