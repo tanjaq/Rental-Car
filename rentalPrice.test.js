@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const { price } = require('./rentalPrice');
 
 // Normalise a price string: strips trailing decimal zeros so '$30.00' === '$30'
@@ -100,6 +103,49 @@ describe('Rental price calculator', () => {
 
     test('Friday-Saturday-Sunday applies weekend increase for two days', () => {
       expect(norm(price('A', 'B', '2024-01-12', '2024-01-14', 'Compact', 50, 10))).toBe('$155');
+    });
+  });
+  describe('Booking form wiring', () => {
+    const LOW_SEASON_DAY = '2024-02-12';
+    const HIGH_SEASON_DAY = '2024-06-10';
+
+    // Reads the car type options straight out of the booking form, so the
+    // form and the price calculator are checked against each other rather
+    // than each against the test author's assumptions.
+    function carTypeOptions() {
+      const formPath = path.join(__dirname, 'form.html');
+      if (!fs.existsSync(formPath)) {
+        throw new Error('form.html not found - the booking form is part of the deliverable');
+      }
+      const html = fs.readFileSync(formPath, 'utf8');
+      const select = html.match(/<select[^>]*name="type"[\s\S]*?<\/select>/i);
+      if (select === null) {
+        throw new Error('No <select name="type"> found in form.html');
+      }
+      return [...select[0].matchAll(/<option[^>]*value="([^"]*)"/gi)].map((m) => m[1]);
+    }
+
+    test('the booking form offers four car types', () => {
+      expect(carTypeOptions()).toHaveLength(4);
+    });
+
+    test('exactly one car type offered by the form can be rented by a 20-year-old', () => {
+      const rentable = carTypeOptions().filter(
+        (value) =>
+          !String(price('A', 'B', LOW_SEASON_DAY, LOW_SEASON_DAY, value, 20, 10)).includes(
+            'only rent Compact'
+          )
+      );
+      expect(rentable).toHaveLength(1);
+    });
+
+    test('exactly one car type offered by the form gets the racer surcharge', () => {
+      const baseline = norm(price('A', 'B', HIGH_SEASON_DAY, HIGH_SEASON_DAY, 'Compact', 25, 10));
+      const surcharged = carTypeOptions().filter(
+        (value) =>
+          norm(price('A', 'B', HIGH_SEASON_DAY, HIGH_SEASON_DAY, value, 25, 10)) !== baseline
+      );
+      expect(surcharged).toHaveLength(1);
     });
   });
 });
