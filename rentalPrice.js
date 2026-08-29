@@ -2,9 +2,6 @@ const fs = require("fs");
 
 var CAR_TYPES = ["Compact", "Electric", "Cabrio", "Racer",];
 
-const SEASON_START = 4;
-const SEASON_END = 10;
-
 const DEBUG = false;
 
 function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
@@ -89,9 +86,9 @@ function getSeason(pickupDate, dropoffDate) {
   const dropoffMonth = months[1];
 
   if (
-      (pickupMonth >= SEASON_START && pickupMonth <= SEASON_END) ||
-      (dropoffMonth >= SEASON_START && dropoffMonth <= SEASON_END) ||
-      (pickupMonth < SEASON_START && dropoffMonth > SEASON_END)
+      (pickupMonth >= 4 && pickupMonth <= 10) ||
+      (dropoffMonth >= 4 && dropoffMonth <= 10) ||
+      (pickupMonth < 4 && dropoffMonth > 10)
   ) {
       return "High";
   } else {
