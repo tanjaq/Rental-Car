@@ -1,12 +1,7 @@
-// Car rental price calculator.
-// Used by index.js (the booking form) — do not change the exported name without checking index.js.
-// TODO: tidy this up at some point
-
 const fs = require("fs");
 
 var CAR_TYPES = ["Compact", "Electric", "Cabrio", "Racer",];
 
-// High season runs from April until the end of October.
 const SEASON_START = 4;
 const SEASON_END = 10;
 
@@ -28,7 +23,6 @@ function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
     return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
 
-  // the minimum rental price per day is the age of the driver, so we just use the age as the daily rate here and multiply
   let rentalprice = age * days;
 
   if (clazz === "Racer") {
@@ -79,7 +73,7 @@ function isKnownType(type) {
 }
 
 function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+  const oneDay = 24 * 60 * 60 * 1000;
   const firstDate = new Date(pickupDate);
   const secondDate  = new Date(dropoffDate);
 
@@ -105,7 +99,6 @@ function getSeason(pickupDate, dropoffDate) {
   }
 }
 
-// Kept around in case we bring back the old loyalty discount.
 function applyLongRentalDiscount(total, days) {
   if (days > 10)
     return total * 0.9;

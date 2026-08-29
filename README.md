@@ -4,10 +4,6 @@ The client's request is to improve the program code to meet clean code standards
 that all specified business requirements are met. This includes addressing bugs in the current
 code and incorporating any missing pieces of code to fulfill new requirements.
 
-The code in this repository **runs**. It is not obviously broken. That is the point: the bugs in
-it look like working code, and several of them only show up on specific dates, at specific ages,
-or in the browser rather than in a unit test.
-
 ## How to get the project
 
 1. Fork this repository on to your account
@@ -47,9 +43,12 @@ Every pull request is checked automatically. See [What the CI checks](#what-the-
     increased by 30%.
   * If the driver's license has been held for less than three years, then an additional
     15 euros will be added to the daily rental price during high season.
+  * A one-way rental, where the car is dropped off somewhere other than the pickup location,
+    carries a flat 25 euro fee.
 
 * The licence length arrives as a **seventh argument** to `price(...)`, after `age`. The booking
   form does not collect it yet — wiring it through `form.html` and `index.js` is part of the task.
+  The one-way fee uses the `pickup` and `dropoff` arguments the function already receives.
 
 * Reminder/cheatsheet for refactoring
    * Use meaningful names for variables, functions and classes.
@@ -93,58 +92,25 @@ you never call cannot be covered, which means dead code has to go rather than be
    * Üks partneritest kirjutab testi.
    * Teine kirjutab koodi, et test läbi läheks.
 
-## Otsused, mida keegi sinu eest ei tee
+## Working with AI on this task
 
-The requirements above are the real thing: written by a client, in prose, with gaps. Nothing in
-this section has an answer printed anywhere in the repository. Work these out before you write
-code, and record what you decided in a comment.
+AI is good at producing code that looks finished. It is much less good at noticing that a
+requirement is ambiguous, that a comparison should have been `<=`, or that a green test suite
+says nothing about the parts you did not test. Those are the parts you have to own.
 
-**1. In what order do the adjustments apply?**
-
-The rules list a `+50%`, a `+15%`, a `-10%`, a `+30%` and a flat `+15 €` per day. Applied in
-different orders these produce different totals. The sharpest case: is the 15 €/day fresh-licence
-charge part of the **daily rate** (so the high-season 15% applies on top of it), or a **flat fee**
-added to the finished total? Both are honest readings of the sentence. They differ by real money.
-
-**2. Where exactly are the boundaries?**
-
-"April until end of October". "18-21". "25 years old or younger". "more than 10 days". Every one
-of those has an edge, and the code in front of you already answers some of them — not always the
-way the requirements do. Before you refactor anything, work out for each rule which single input
-sits exactly on the edge, and what the current code returns for it.
-
-**3. What is a price?**
-
-Try a 100-year-old renting a Compact car for one day on 15 October. Look at the number you get
-back. Decide what a price is allowed to look like.
-
-**4. The tests and the users see different things.**
-
-Unit tests only see `rentalPrice.js`. A customer only ever sees the booking form. Start the app
-with `node index.js`, open http://localhost:3000/, and try to rent a **Compact car as a
-20-year-old**. Then try the same thing by calling `price(...)` directly. If those two disagree,
-your unit tests can be green and the product still broken — find out where the disagreement
-comes from, and decide which side should change.
-
-## Kuidas AI-d kasutada
-
-You are expected to use AI for this task. You are not expected to get anything useful out of
-"here is my code, make it clean" — try it and see. The bugs in this repository were written to
-survive that prompt, because to an AI they look like decisions someone made on purpose.
-
-What works better is separating the steps you would otherwise let it blur together.
+What helps is separating steps you would otherwise let it blur together.
 
 **Diagnose before you repair.** Ask for a list, not a patch:
 
 > Here are the business requirements and here is the code. List every place where the code
 > disagrees with the requirements. Quote the line and the rule. Do not fix anything yet.
 
-**Ask for edges by name.** AI will not test boundaries unless you make it:
+**Ask for edges by name.** Boundaries do not get tested unless you ask:
 
 > For each rule in these requirements, give me the exact input value that sits on the boundary,
 > and tell me what the current code returns for that value.
 
-**Make it compute both readings instead of choosing for you:**
+**When a requirement can be read two ways, make it compute both instead of choosing for you:**
 
 > This requirement can mean A or B. Calculate the total for a 30-year-old, 3 days,
 > 10-12 June 2024, licence held 2.5 years, under both readings. Show the arithmetic.
@@ -154,20 +120,22 @@ What works better is separating the steps you would otherwise let it blur togeth
 > The test expects $148.50, my code returns $155.25. Do not change my code. Tell me what order
 > of operations produces 148.50 from these inputs.
 
-**Refactor and verify separately:**
+**Refactor and verify as separate steps:**
 
 > Restructure this function without changing any output. Then list every behaviour change you
 > made, so I can check them against my tests.
 
-Two rules of engagement:
+Three habits that matter more than any prompt:
 
 - **Never commit a change you cannot explain in one sentence.** You will be asked.
 - **A green test is evidence, an AI explanation is not.** If they disagree, find out why before
   you touch anything.
+- **Run the application, not just the tests.** A passing test suite is evidence about the code
+  you tested, not about the product a customer uses.
 
-And a warning: `npx eslint . --fix` will silence most of the style complaints in about
-a second. It will not rename a function, delete dead code, split a function that does too much,
-or find a single one of the bugs. What is left after `--fix` is the actual assignment.
+One practical note: `npx eslint . --fix` will silence most of the style complaints in about a
+second. It will not rename a function, delete unused code, split a function that does too much,
+or find a single bug. What is left after `--fix` is the actual assignment.
 
 ## What the CI checks
 
@@ -181,8 +149,9 @@ Three jobs run on every pull request, and each one leaves a comment on the PR.
 
 All three fail on the code as it stands today. That is the starting position, not a mistake.
 
-The Functional Requirements job calls your `price(...)` and tolerates a few reasonable signature
-changes (positional without the location arguments, a single options object, or an export named
-`calculatePrice`). It does not tolerate changing what the function *returns*. Note also that CI
-runs with `TZ=UTC` — if your results depend on the machine's timezone, that is a bug worth
-finding.
+The Functional Requirements job calls
+`price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears)`. It tolerates two
+reasonable variations — taking a single options object instead of positional arguments, or
+exporting the function as `calculatePrice` — but it does not tolerate dropping arguments or
+changing what the function *returns*. Note also that CI runs with `TZ=UTC`; if your results
+depend on the machine's timezone, that is a bug worth finding.
