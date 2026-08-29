@@ -8,6 +8,12 @@ permissions:
   contents: read
   pull-requests: write
 
+# Pricing depends on calendar dates. Pin the timezone so a run never disagrees
+# with a student's machine about which day or month a date falls in.
+env:
+  TZ: UTC
+  FORCE_COLOR: 0
+
 jobs:
   lint-clean-code:
     name: Lint Clean Code
@@ -43,7 +49,7 @@ jobs:
         id: lint_output
         if: always()
         run: |
-          OUTPUT=$(head -60 /tmp/lint-output.txt 2>/dev/null || echo "No output captured")
+          OUTPUT=$(head -100 /tmp/lint-output.txt 2>/dev/null || echo "No output captured")
           echo "text<<EOF" >> "$GITHUB_OUTPUT"
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
@@ -116,6 +122,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Detect student test files
+        id: has_tests
+        run: |
+          COUNT=$(git ls-files '*.test.js' '*.spec.js' '__tests__/*' | wc -l)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "::warning::No test files found in the repository - Ulesanne 2 has not been started."
+          fi
 
       - name: Run tests with coverage
         id: repo_tests
@@ -191,7 +206,10 @@ jobs:
               `**Run details:** ${runUrl}`,
               `**PR checks:** ${checksUrl}`,
             ];
-            if (!allOk) {
+            if ('${{ steps.has_tests.outputs.count }}' === '0') {
+              lines.push('');
+              lines.push('> **No test files found in the repository.** Ulesanne 2 asks you to cover your refactored code with Jest tests (`*.test.js`). Coverage is measured on every `.js` file except `index.js` - see `jest.config.js`.');
+            } else if (!allOk) {
               lines.push('**Where to look:** Inspect `Run tests with coverage` and `Enforce global 100% coverage` step logs in this run.');
             }
             const body = lines.join('\n');
@@ -282,13 +300,20 @@ jobs:
           // Low season, 1 day, Compact, age 30, licenseYears 10 => $30
           // LY=10 ensures students who default undefined→0 don't get a license
           // error and a false probe miss.
-          const PICKUP = 'A', DROPOFF = 'B';
+          const PICKUP = 'Tallinn', DROPOFF = 'Tallinn';
           const PD = '2024-02-12', DD = '2024-02-12';
           const TYPE = 'Compact', AGE = 30, LY = 10;
           const EXPECTED = '$30';
 
+          // Same normalisation the functional tests use: '$30.00' === '$30'.
+          function norm(val) {
+            if (typeof val !== 'string' || !val.startsWith('$')) { return val; }
+            const n = parseFloat(val.slice(1));
+            return isNaN(n) ? val : `$${n}`;
+          }
+
           function probe(fn, args) {
-            try { return fn(...args) === EXPECTED; } catch { return false; }
+            try { return norm(fn(...args)) === EXPECTED; } catch { return false; }
           }
 
           if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY])) {
@@ -298,20 +323,7 @@ jobs:
 
           let adapterLines = null;
 
-          // Case 1: location params (pickup, dropoff) removed — price(pickupDate, dropoffDate, type, age, ...)
-          if (probe(origFn, [PD, DD, TYPE, AGE, LY])) {
-            console.log('Detected: location params removed — injecting positional adapter');
-            adapterLines = [
-              "const s = require('./rentalPrice.student.js');",
-              "const f = s." + exportName + ";",
-              "function price(pickup, dropoff, pickupDate, dropoffDate, type, age, ...rest) {",
-              "  return f(pickupDate, dropoffDate, type, age, ...rest);",
-              "}",
-              "module.exports = { ...s, price };",
-            ];
-          }
-
-          // Case 2: object-style params — price({ pickup, dropoff, pickupDate, dropoffDate, type, age })
+          // Case 1: object-style params — price({ pickup, dropoff, pickupDate, dropoffDate, type, age })
           if (!adapterLines && probe(origFn, [{ pickup: PICKUP, dropoff: DROPOFF, pickupDate: PD, dropoffDate: DD, type: TYPE, age: AGE, licenseYears: LY }])) {
             console.log('Detected: object-style params — injecting object adapter');
             adapterLines = [
@@ -324,7 +336,7 @@ jobs:
             ];
           }
 
-          // Case 3: standard signature but exported as calculatePrice
+          // Case 2: standard signature but exported as calculatePrice
           if (!adapterLines && exportName !== 'price') {
             if (probe(origFn, [PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY])) {
               console.log('Detected: standard signature exported as calculatePrice — aliasing');
@@ -341,7 +353,8 @@ jobs:
             let sample;
             try { sample = JSON.stringify(origFn(PICKUP, DROPOFF, PD, DD, TYPE, AGE, LY)); } catch (e) { sample = String(e); }
             console.log('No compatible signature detected. Sample return value: ' + sample);
-            console.log('Likely cause: function returns a non-string type (e.g. object). Running tests as-is — they will fail if the API contract changed.');
+            console.log('The tests call price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) and expect a string like "$30" or "$30.00".');
+            console.log('Likely cause: arguments were dropped, or the function returns a non-string type. Running tests as-is.');
             process.exit(0);
           }
 
@@ -354,11 +367,27 @@ jobs:
         id: teacher
         continue-on-error: true
         run: |
+          set -o pipefail
           if node -e "const p=require('./package.json'); process.exit(p.scripts && p.scripts.test ? 0 : 1)"; then
-            npm test -- --runInBand
+            npm test -- --runInBand 2>&1 | tee /tmp/teacher-output.txt
           else
-            npx jest --runInBand
+            npx jest --runInBand 2>&1 | tee /tmp/teacher-output.txt
           fi
+
+      - name: Collect failing requirements
+        id: teacher_failures
+        if: always()
+        run: |
+          FAILED=$(grep -E '^[[:space:]]+(✕|×|x) ' /tmp/teacher-output.txt 2>/dev/null | sed -E 's/\([0-9]+ ms\)//' | head -40 || true)
+          if [ -z "$FAILED" ]; then
+            FAILED=$(grep -E '^[[:space:]]*●' /tmp/teacher-output.txt 2>/dev/null | sort -u | head -40 || true)
+          fi
+          if [ -z "$FAILED" ]; then
+            FAILED="(no individual failures parsed - the suite may have failed to load; see the step log)"
+          fi
+          echo "text<<TEACHER_EOF" >> "$GITHUB_OUTPUT"
+          echo "$FAILED" >> "$GITHUB_OUTPUT"
+          echo "TEACHER_EOF" >> "$GITHUB_OUTPUT"
 
       - name: Comment functional requirements result on PR
         if: always()
@@ -378,7 +407,11 @@ jobs:
               `**PR checks:** ${checksUrl}`,
             ];
             if (!ok) {
-              lines.push('**Where to look:** Inspect the `Run functional requirements tests` step log in this run.');
+              lines.push('**Requirements not met yet:**');
+              lines.push('```');
+              lines.push(`${{ steps.teacher_failures.outputs.text }}`);
+              lines.push('```');
+              lines.push('**Where to look:** Inspect the `Run functional requirements tests` step log for the expected vs. received values.');
             }
             const body = lines.join('\n');
 
