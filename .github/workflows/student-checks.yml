@@ -1,0 +1,42 @@
+name: Student checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  TZ: UTC
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Jest and 100 percent coverage
+        run: npm test -- --runInBand --coverage --coverageReporters=text --coverageReporters=json-summary --coverageThreshold='{"global":{"branches":100,"functions":100,"lines":100,"statements":100}}'
+      - name: ESLint
+        run: npx eslint . --max-warnings=0
+      - name: Start application and verify booking
+        run: |
+          node index.js > /tmp/rental-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID"' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/ > /tmp/rental-form.html; then break; fi
+            sleep 1
+          done
+          grep -q 'name="licenseYears"' /tmp/rental-form.html
+          curl -fsS -X POST http://localhost:3000/ --data 'pickup=Tallinn&dropoff=Tallinn&pickupdate=2026-01-08&dropoffdate=2026-01-10&type=compact&age=50&licenseYears=3' > /tmp/rental-result.html
+          grep -q '$152.50' /tmp/rental-result.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rental-coverage
+          path: coverage/
