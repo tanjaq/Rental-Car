@@ -1,110 +1,100 @@
-const fs = require("fs");
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_AGE = 18;
+const COMPACT_ONLY_AGE = 21;
+const YOUNG_RACER_AGE = 25;
+const HIGH_START_MONTH = 3;
+const HIGH_END_MONTH = 9;
+const HIGH_SEASON_RATE = 1.15;
+const YOUNG_RACER_RATE = 1.5;
+const NEW_DRIVER_RATE = 1.3;
+const NEW_DRIVER_DAILY_FEE = 15;
+const LONG_RENTAL_DAYS = 10;
+const LONG_RENTAL_RATE = 0.9;
+const ONE_WAY_FEE = 25;
+const WEEKEND_RATE = 1.05;
+const SATURDAY = 6;
+const SUNDAY = 0;
+const CAR_TYPES = ["compact", "electric", "cabrio", "racer"];
 
-var CAR_TYPES = ["Compact", "Electric", "Cabrio", "Racer",];
+function calendarDay(value) {
+  const date = new Date(value);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
 
-const DEBUG = false;
+function rentalDays(firstDay, lastDay) {
+  const days = [];
+  for (let day = firstDay; day <= lastDay; day += DAY_MS) {
+    days.push(new Date(day));
+  }
+  return days;
+}
 
-function price(pickup, dropoff, pickupDate, dropoffDate, type, age) {
-  const clazz = getClazz(type);
-  const days = get_days(pickupDate, dropoffDate);
-  const season = getSeason(pickupDate, dropoffDate);
-  let discount = 0;
+function isHighSeason(day) {
+  const month = day.getUTCMonth();
+  return month >= HIGH_START_MONTH && month <= HIGH_END_MONTH;
+}
 
-  age = Number(age);
+function dailyPrice(age, licenseYears, type, highSeason, days) {
+  let amount = age;
+  if (highSeason) {
+    if (type === "racer" && age <= YOUNG_RACER_AGE) {
+      amount *= YOUNG_RACER_RATE;
+    }
+    amount *= HIGH_SEASON_RATE;
+  } else if (days > LONG_RENTAL_DAYS) {
+    amount *= LONG_RENTAL_RATE;
+  }
+  if (licenseYears < 2) {
+    amount *= NEW_DRIVER_RATE;
+  }
+  if (highSeason && licenseYears < 3) {
+    amount += NEW_DRIVER_DAILY_FEE;
+  }
+  return amount;
+}
 
-  if (age < 18) {
+function driverError(driverAge, experience, carType) {
+  if (!Number.isFinite(driverAge) || !Number.isFinite(experience)) {
+    return "Age and licence years must be numbers";
+  }
+  if (driverAge < MIN_AGE) {
     return "Driver too young - cannot quote the price";
   }
-
-  if (age < 21 && clazz != "Compact") {
+  if (experience < 1) {
+    return "Driver must hold a licence for at least one year";
+  }
+  if (!CAR_TYPES.includes(carType)) {
+    return "Unknown car type";
+  }
+  if (driverAge <= COMPACT_ONLY_AGE && carType !== "compact") {
     return "Drivers 21 y/o or less can only rent Compact vehicles";
   }
+  return "";
+}
 
-  let rentalprice = age * days;
-
-  if (clazz === "Racer") {
-      if (age < 25) {
-          if (season === "High") {
-              rentalprice = rentalprice * 1.5;
-          }
-      }
+function price(pickup, dropoff, pickupDate, dropoffDate, type, age, licenseYears) {
+  const driverAge = Number(age);
+  const experience = Number(licenseYears);
+  const carType = String(type).toLowerCase();
+  const error = driverError(driverAge, experience, carType);
+  if (error) {
+    return error;
   }
-
-  if (season === "High") {
-    rentalprice = rentalprice * 1.15;
-  } else {
-    if (days > 10) {
-      discount = 0.9;
-      rentalprice = rentalprice * discount;
-    }
+  const firstDay = calendarDay(pickupDate);
+  const lastDay = calendarDay(dropoffDate);
+  if (!Number.isFinite(firstDay) || !Number.isFinite(lastDay) || lastDay < firstDay) {
+    return "Invalid rental dates";
   }
-
-  if (DEBUG) console.log('quote: ' + days + ' days, ' + season + ' season, total ' + rentalprice);
-
-  return '$' + rentalprice;
+  const days = rentalDays(firstDay, lastDay);
+  const highSeason = days.some(isHighSeason);
+  const perDay = dailyPrice(driverAge, experience, carType, highSeason, days.length);
+  const total = days.reduce((sum, day) => {
+    const weekday = day.getUTCDay();
+    const weekend = weekday === SATURDAY || weekday === SUNDAY;
+    return sum + perDay * (weekend ? WEEKEND_RATE : 1);
+  }, 0);
+  const oneWayFee = pickup === dropoff ? 0 : ONE_WAY_FEE;
+  return `$${(total + oneWayFee).toFixed(2)}`;
 }
 
-function getClazz(type) {
-  switch (type) {
-    case "Compact":
-      return "Compact";
-    case "Electric":
-      return "Electric";
-    case "Cabrio":
-      return "Cabrio";
-    case "Racer":
-      return "Racer";
-    default:
-      return "Unknown";
-  }
-}
-
-function isKnownType(type) {
-  var found = null;
-  for (var i = 0; i < CAR_TYPES.length; i++) {
-    if (CAR_TYPES[i] == type) {
-      found = CAR_TYPES[i];
-    }
-  }
-  return !!found;
-}
-
-function get_days(pickupDate, dropoffDate) {
-  const oneDay = 24 * 60 * 60 * 1000;
-  const firstDate = new Date(pickupDate);
-  const secondDate  = new Date(dropoffDate);
-
-  return Math.round(Math.abs((firstDate - secondDate) / oneDay)) + 1;
-}
-
-function getSeason(pickupDate, dropoffDate) {
-  const months = [pickupDate, dropoffDate].map(function (pickupDate) {
-    return new Date(pickupDate).getMonth();
-  });
-
-  const pickupMonth = months[0];
-  const dropoffMonth = months[1];
-
-  if (
-      (pickupMonth >= 4 && pickupMonth <= 10) ||
-      (dropoffMonth >= 4 && dropoffMonth <= 10) ||
-      (pickupMonth < 4 && dropoffMonth > 10)
-  ) {
-      return "High";
-  } else {
-      return "Low";
-  }
-}
-
-function applyLongRentalDiscount(total, days) {
-  if (days > 10)
-    return total * 0.9;
-  return total;
-}
-
-function logQuote() {}
-
-exports.price = price;
-exports.applyLongRentalDiscount = applyLongRentalDiscount;
-exports.isKnownType = isKnownType;
-exports.logQuote = logQuote;
+module.exports = { price };
